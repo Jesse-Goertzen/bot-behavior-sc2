@@ -1,103 +1,112 @@
 #include "BasicSc2Bot.h"
 
+
+// State for each action
+enum BotState {
+    BUILD_FIRST_DRONE,
+    BUILD_OVERLORD,
+    BUILD_THREE_DRONE,
+    BUILD_FIRST_HATCHERY,
+    IDLE
+};
+BotState current_state = BUILD_FIRST_DRONE;
+
 void BasicSc2Bot::OnGameStart() {
 
     std::cout << "Script starting " << std::endl;
-}
 
+}
 
 // Right now it uses a bunch of and statments which is very bad but its just for testing. Using a queue or a state machine would be a better approach
 // state machine involves defining an enum that represents each step, and then using a single variable to track the current state. 
 
-
 // Our on step function will do these sequences of steps as a test
 // following this video https://www.youtube.com/watch?v=Rfwzf_AJgFU
+
 // First, once we reach 50 minerals we will make a drone
-bool first_drone_built = false;
+
 // Once that is trained we make a new overlord to have more room for more units
-bool first_overlord_built = false;
-// Make another drone after that overlord. Check that we have 50 minerals as a just in case
-bool second_drone_built = false;
+
+// Train 3 more drone after that overlord. We will be at 16 supply at this point
+
 // On 16 supply make a hatchery at the nearest location. This costs the drone and 300 minerals
 bool first_hatchery_built = false;
 
-
 void BasicSc2Bot::OnStep() {
 
-    // First, once we reach 50 minerals we will make a drone
-    // Check if enough minerals are available
-    if (Observation()->GetMinerals() >= 50 && first_drone_built == false) {
-        std::cout << "Build first drone..." << std::endl;
-        // Get a list of larva
-        auto larvae = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-                return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
-            });
-        // If there is at least one Larva train it into a drone
-        if (!larvae.empty()) {
-            Actions()->UnitCommand(larvae.front(), sc2::ABILITY_ID::TRAIN_DRONE);
-            first_drone_built = true;
-            std::cout << "Built first drone!" << std::endl;
-        }
-    }
-
-    // Once that is trained we make a new overlord to have more room for more units
-    // Check if we have 100 for an overlord
-    if (Observation()->GetMinerals() >= 100 && first_overlord_built == false && first_drone_built == true) {
-        std::cout << "Build first overlord..." << std::endl;
-        // Get a list of larva
-        auto larvae = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-                return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
-            });
-        // If there is at least one Larva train it into a drone
-        if (!larvae.empty()) {
-            Actions()->UnitCommand(larvae.front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
-            first_overlord_built = true;
-            std::cout << "Built first overlord!" << std::endl;
-        }
-    }
-
-    // Make another drone after that overlord. Check that we have 50 minerals as a just in case
-    if (Observation()->GetMinerals() >= 50 && second_drone_built == false && first_overlord_built == true) {
-        std::cout << "Build second drone..." << std::endl;
-        // Get a list of larva
-        auto larvae = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-                return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
-            });
-        // If there is at least one Larva train it into a drone
-        if (!larvae.empty()) {
-            Actions()->UnitCommand(larvae.front(), sc2::ABILITY_ID::TRAIN_DRONE);
-            second_drone_built = true;
-            std::cout << "Built second drone!" << std::endl;
-        }
-    }
-
-    if (Observation()->GetMinerals() >= 300 && first_hatchery_built == false && second_drone_built == true) {
-        std::cout << "Build Hatchery..." << std::endl;
-        BuildHatchery();
-        std::cout << "Built Hatchery!" << std::endl;
-    }
-
-
-}
-
-void BasicSc2Bot::BuildHatchery() {
-    if (Observation()->GetMinerals() < 300) {
-        return; // Not enough minerals to build a Hatchery
-    }
-
-    // Find an drone to use
-    auto drones = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
+    // On each step get the amount of larva
+    auto larva = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
     });
-    if (drones.empty()) {
-        return;
+
+    // Current supply
+    int current_supply = Observation()->GetFoodUsed();
+
+    // Switch case for all the steps we will do
+
+    switch (current_state) {
+
+        // First, once we reach 50 minerals we will make a drone
+        case BUILD_FIRST_DRONE:
+            if (Observation()->GetMinerals() >= 50 && !larva.empty()) {
+                std::cout << "STEP>Build Drone<" << std::endl;
+                Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
+                current_state = BUILD_OVERLORD;
+            }
+            break;
+
+        // Once that is trained we make a new overlord to have more room for more units
+        case BUILD_OVERLORD:
+            if (Observation()->GetMinerals() >= 100 && !larva.empty()) {
+                std::cout << "STEP>Build Overlord<" << std::endl;
+                Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
+                current_state = BUILD_THREE_DRONE;
+            }
+            break;
+
+        // Train 3 more drone after that overlord. We will be at 16 supply at this point
+        // Right now this keeps trying to make more while the others are being trained...
+        case BUILD_THREE_DRONE:
+            if (Observation()->GetMinerals() >= 50 && !larva.empty()) {
+                std::cout << "STEP>Build Drone<" << std::endl;
+                Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
+            }
+            if (current_supply == 16) {
+                std::cout << "Supply at 16..." << std::endl;
+                current_state = BUILD_FIRST_HATCHERY;
+            }
+            break;
+
+        // On 16 supply make a hatchery at the nearest location. This costs the drone and 300 minerals
+        case BUILD_FIRST_HATCHERY:
+            std::cout << "STEP>Build Hatchery<" << std::endl;
+            current_state = IDLE;
+            break;
+
+        case IDLE:
+            std::cout << "Idle..." << std::endl;
+
+        break;
+
     }
-
-    // Find the nearest expansion location
-    sc2::Point2D hatchery_location = GetNearestExpansion();
-
-    // Send the drone to build a Hatchery at the nearest location
-    Actions()->UnitCommand(drones.front(), sc2::ABILITY_ID::BUILD_HATCHERY, hatchery_location);
-    std::cout << "Building Hatchery at nearest expansion location!" << std::endl;
-    first_hatchery_built = true;
 }
+
+// // Function to build a hatchery from a drone
+// bool BasicSc2Bot::BuildHatchery() {
+
+//     // Find an drone to use
+//     auto drones = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+//         return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
+//     });
+//     if (drones.empty()) {
+//         return false;
+//     }
+
+//     // Find the nearest expansion location
+//     sc2::Point2D hatchery_location = GetNearestExpansion();
+
+//     // Send the drone to build a Hatchery at the nearest location
+//     Actions()->UnitCommand(drones.front(), sc2::ABILITY_ID::BUILD_HATCHERY, hatchery_location);
+//     std::cout << "Built Hatchery!" << std::endl;
+//     return true;
+// }

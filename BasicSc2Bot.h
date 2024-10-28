@@ -12,10 +12,12 @@ public:
 	virtual void OnGameStart();
 	virtual void OnStep();
 	
-	void BuildHatchery();
-	
+	// bool BuildHatchery();
+	// bool TrainDrone();
+	// bool TrainOverlord();
+
 private:
-	sc2::Point2D GetNearestExpansion();
+	// sc2::Point2D GetNearestExpansion();
 };
 
 #endif
