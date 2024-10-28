@@ -11,8 +11,11 @@ class BasicSc2Bot : public sc2::Agent {
 public:
 	virtual void OnGameStart();
 	virtual void OnStep();
-
+	
+	void BuildHatchery();
+	
 private:
+	sc2::Point2D GetNearestExpansion();
 };
 
 #endif
