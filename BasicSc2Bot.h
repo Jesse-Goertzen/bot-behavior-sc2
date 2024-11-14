@@ -19,6 +19,9 @@ public:
 	// BotState NextState(BotState current);
 
 	std::vector<const sc2::Unit*> getLarva();
+	std::vector<const sc2::Unit*> getDrones();
+
+	float getSupply();
 
 	// State for each action
 	enum BotState {

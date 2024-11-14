@@ -7,16 +7,12 @@ void BasicSc2Bot::OnGameStart() {
 
     // Set the current state
     current_state = BUILD_FIRST_DRONE;
-
 }
 
 void BasicSc2Bot::OnStep() {
-    // On each step get the amount of units
+    // On each step update the amount of units. This updates larva, overlord and drone vectors in the class
+    // Can get the size of each using larva.size() for example
     UpdateUnits();
-
-    std::cout << "Larva size: " << getLarva().size() << std::endl;
-
-
 
     // Current supply
     int current_supply = Observation()->GetFoodUsed();
@@ -26,9 +22,9 @@ void BasicSc2Bot::OnStep() {
         
         // First, once we reach 50 minerals we will make a drone
         case BUILD_FIRST_DRONE:
-            if (Observation()->GetMinerals() >= 50 && !larva.empty()) {
-                std::cout << ">Build Drone<" << std::endl;
-                Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
+            // Attempt to build drone
+            if (BuildDrone()) {
+                std::cout << "BUILT FIRST DRONE" << std::endl;
                 current_state = BUILD_OVERLORD;
             }
             break;
@@ -99,16 +95,30 @@ void BasicSc2Bot::OnStep() {
 // }
 
 // Function that attempts to build a drone. Returns true or false if it succeeds
+// Should update this to be a general use case for any unit
 bool BasicSc2Bot::BuildDrone() {
 
-    // Get the count of drones
+    if (Observation()->GetMinerals() < 50) {
+        std::cout << "Not enough minerals to train drone!" << std::endl;
+        return false;
+    }
 
-    // If the drone count does not change then return false, otherwise we successfully created one
+    if (larva.empty()) {
+        std::cout << "Not enough larva to train drone!" << std::endl;
+        return false;
+    }
+
+    if (larva.empty()) {
+        std::cout << "Not enough supply to train drone!" << std::endl;
+        return false;
+    }
+
+    // Attempt to build
+    Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
 
     return true;
 
 }
-
 
 // Update the vectors of the units we have avalible
 void BasicSc2Bot::UpdateUnits() {
@@ -120,11 +130,29 @@ void BasicSc2Bot::UpdateUnits() {
 
     // Update the drones vector
     drones = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
+        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
+    });
+
+    // Update overlords
+    overlords = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_OVERLORD;
     });
 
 }
 
 std::vector<const sc2::Unit*> BasicSc2Bot::getLarva() {
         return larva;
+}
+
+std::vector<const sc2::Unit*> BasicSc2Bot::getDrones() {
+        return drones;
+}
+
+// Get the avalible supply
+float BasicSc2Bot::getSupply() {
+
+    float total_supply = Observation()->GetFoodCap();
+    float used_supply = Observation()->GetFoodUsed();
+    return total_supply - used_supply;
+
 }
