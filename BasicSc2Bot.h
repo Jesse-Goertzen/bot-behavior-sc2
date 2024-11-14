@@ -14,6 +14,8 @@ public:
 	
 	bool BuildDrone();
 
+	bool BuildOverlord();
+
 	void UpdateUnits();
 
 	// BotState NextState(BotState current);
@@ -21,7 +23,7 @@ public:
 	std::vector<const sc2::Unit*> getLarva();
 	std::vector<const sc2::Unit*> getDrones();
 
-	float getSupply();
+	float getAvailableSupply();
 
 	// State for each action
 	enum BotState {

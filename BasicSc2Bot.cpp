@@ -19,8 +19,7 @@ void BasicSc2Bot::OnStep() {
 
     // Switch case for all the steps we will do
     switch (current_state) {
-        
-        // First, once we reach 50 minerals we will make a drone
+
         case BUILD_FIRST_DRONE:
             // Attempt to build drone
             if (BuildDrone()) {
@@ -31,33 +30,13 @@ void BasicSc2Bot::OnStep() {
 
         // Once that is trained we make a new overlord to have more room for more units
         case BUILD_OVERLORD:
-            if (Observation()->GetMinerals() >= 100 && !larva.empty()) {
-                std::cout << ">Build Overlord<" << std::endl;
-                Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
-                current_state = BUILD_SECOND_DRONE;
-            }
-            break;
+            // Attempt to build overlord
 
-        // Train 2 more drone after that overlord. We will be at 16 supply at this point
-        // Right now this keeps trying to make more while the others are being trained...
-        case BUILD_SECOND_DRONE:
-            if (Observation()->GetMinerals() >= 50 && !larva.empty()) {
-                std::cout << ">Build Drone<" << std::endl;
-                Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
-                
-                // Check if we have 3 drones
-                if (drones.size() >= 3) {
-                    std::cout << "Drones at 3" << std::endl;
-                    current_state = BUILD_FIRST_HATCHERY;
-                }
+            if (BuildOverlord()) {
+                std::cout << "BUILT FIRST OVERLORD" << std::endl;
+                current_state = IDLE;
             }
-            break;
 
-        // On 16 supply make a hatchery at the nearest location. This costs the drone and 300 minerals
-        case BUILD_FIRST_HATCHERY:
-            std::cout << ">Build Hatchery<" << std::endl;
-            current_state = IDLE;
-            break;
 
         case IDLE:
             // std::cout << "Idle..." << std::endl;
@@ -99,7 +78,7 @@ void BasicSc2Bot::OnStep() {
 bool BasicSc2Bot::BuildDrone() {
 
     if (Observation()->GetMinerals() < 50) {
-        std::cout << "Not enough minerals to train drone!" << std::endl;
+        std::cout << "Not enough minerals to train drone! (" << Observation()->GetMinerals() << "/50)" << std::endl;
         return false;
     }
 
@@ -108,7 +87,7 @@ bool BasicSc2Bot::BuildDrone() {
         return false;
     }
 
-    if (larva.empty()) {
+    if (getAvailableSupply() < 1) {
         std::cout << "Not enough supply to train drone!" << std::endl;
         return false;
     }
@@ -117,7 +96,24 @@ bool BasicSc2Bot::BuildDrone() {
     Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
 
     return true;
+}
 
+bool BasicSc2Bot::BuildOverlord() {
+
+    if (Observation()->GetMinerals() < 100) {
+        std::cout << "Not enough minerals to train overlord! (" << Observation()->GetMinerals() << "/100)" << std::endl;
+        return false;
+    }
+
+    if (larva.empty()) {
+        std::cout << "Not enough larva to train overlord!" << std::endl;
+        return false;
+    }
+
+    // Attempt to build
+    Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
+
+    return true;
 }
 
 // Update the vectors of the units we have avalible
@@ -148,8 +144,8 @@ std::vector<const sc2::Unit*> BasicSc2Bot::getDrones() {
         return drones;
 }
 
-// Get the avalible supply
-float BasicSc2Bot::getSupply() {
+// Get the available supply
+float BasicSc2Bot::getAvailableSupply() {
 
     float total_supply = Observation()->GetFoodCap();
     float used_supply = Observation()->GetFoodUsed();
