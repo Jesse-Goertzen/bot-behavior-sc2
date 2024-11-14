@@ -1,5 +1,17 @@
 #include "BasicSc2Bot.h"
 
+// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L62C1-L76C3
+struct IsTownHall {
+    bool operator()(const sc2::Unit& unit) {
+        switch (unit.unit_type.ToType()) {
+            case sc2::UNIT_TYPEID::ZERG_HATCHERY: return true;
+            case sc2::UNIT_TYPEID::ZERG_LAIR: return true;
+            case sc2::UNIT_TYPEID::ZERG_HIVE : return true;
+            default: return false;
+        }
+    }
+};
+
 
 void BasicSc2Bot::OnGameStart() {
 
@@ -7,6 +19,12 @@ void BasicSc2Bot::OnGameStart() {
 
     // Set the current state
     current_state = BUILD_FIRST_DRONE;
+
+    expansions_ = sc2::search::CalculateExpansionLocations(Observation(), Query());
+
+    // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
+    startLocation_ = Observation()->GetStartLocation();
+    staging_location_ = startLocation_;
 }
 
 void BasicSc2Bot::OnStep() {
@@ -20,6 +38,7 @@ void BasicSc2Bot::OnStep() {
     // Switch case for all the steps we will do
     switch (current_state) {
 
+        // Start by building a drone
         case BUILD_FIRST_DRONE:
             // Attempt to build drone
             if (BuildDrone()) {
@@ -28,15 +47,40 @@ void BasicSc2Bot::OnStep() {
             }
             break;
 
-        // Once that is trained we make a new overlord to have more room for more units
+        // Then build a overlord when possible to make room for more units
         case BUILD_OVERLORD:
             // Attempt to build overlord
-
             if (BuildOverlord()) {
                 std::cout << "BUILT FIRST OVERLORD" << std::endl;
+                current_state = BUILD_SECOND_DRONE;
+            }
+            break;
+
+        // Build two more drones
+        case BUILD_SECOND_DRONE:
+            // Attempt to build drone
+            if (BuildDrone()) {
+                std::cout << "BUILT SECOND DRONE" << std::endl;
+                current_state = BUILD_THIRD_DRONE;
+            }
+            break;
+        case BUILD_THIRD_DRONE:
+            // Attempt to build drone
+            if (BuildDrone()) {
+                std::cout << "BUILT THIRD DRONE" << std::endl;
+                current_state = EXPAND;
+            }
+            break;
+
+
+        case EXPAND:
+            // Attempt to expand
+            if (Observation()->GetMinerals() > 300) {
+                TryExpand(sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE);
+                std::cout << "EXPANDED" << std::endl;
                 current_state = IDLE;
             }
-
+            break;
 
         case IDLE:
             // std::cout << "Idle..." << std::endl;
@@ -72,6 +116,7 @@ void BasicSc2Bot::OnStep() {
 //     // UnderlyingType nextValue = (static_cast<UnderlyingType>(current) + 1) % static_cast<UnderlyingType>(BotState::Count);
 //     // return static_cast<BotState>(nextValue);
 // }
+
 
 // Function that attempts to build a drone. Returns true or false if it succeeds
 // Should update this to be a general use case for any unit
@@ -151,4 +196,75 @@ float BasicSc2Bot::getAvailableSupply() {
     float used_supply = Observation()->GetFoodUsed();
     return total_supply - used_supply;
 
+}
+
+// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L390
+// Expands to nearest location and updates the start location to be between the new location and old bases.
+bool BasicSc2Bot::TryExpand(sc2::AbilityID build_ability, sc2::UnitTypeID worker_type) {
+    const sc2::ObservationInterface* observation = Observation();
+    float minimum_distance = std::numeric_limits<float>::max();
+    sc2::Point3D closest_expansion;
+    for (const auto& expansion : expansions_) {
+        float current_distance = Distance2D(startLocation_, expansion);
+        if (current_distance < .01f) {
+            continue;
+        }
+
+        if (current_distance < minimum_distance) {
+            if (Query()->Placement(build_ability, expansion)) {
+                closest_expansion = expansion;
+                minimum_distance = current_distance;
+            }
+        }
+    }
+    //only update staging location up till 3 bases.
+    if (TryBuildStructure(build_ability, worker_type, closest_expansion, true) && observation->GetUnits(sc2::Unit::Self, IsTownHall()).size() < 4) {
+        staging_location_ = sc2::Point3D(((staging_location_.x + closest_expansion.x) / 2), ((staging_location_.y + closest_expansion.y) / 2),
+            ((staging_location_.z + closest_expansion.z) / 2));
+        return true;
+    }
+    return false;
+
+}
+
+// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L316C1-L356C2
+bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Point2D location, bool isExpansion = false) {
+
+    const sc2::ObservationInterface* observation = Observation();
+    sc2::Units workers = observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
+
+    //if we have no workers Don't build
+    if (workers.empty()) {
+        return false;
+    }
+
+    // Check to see if there is already a worker heading out to build it
+    for (const auto& worker : workers) {
+        for (const auto& order : worker->orders) {
+            if (order.ability_id == ability_type_for_structure) {
+                return false;
+            }
+        }
+    }
+
+    // If no worker is already building one, get a random worker to build one
+    const sc2::Unit* unit = GetRandomEntry(workers);
+
+    // Check to see if unit can make it there
+    if (Query()->PathingDistance(unit, location) < 0.1f) {
+        return false;
+    }
+    if (!isExpansion) {
+        for (const auto& expansion : expansions_) {
+            if (Distance2D(location, sc2::Point2D(expansion.x, expansion.y)) < 7) {
+                return false;
+            }
+        }
+    }
+    // Check to see if unit can build there
+    if (Query()->Placement(ability_type_for_structure, location)) {
+        Actions()->UnitCommand(unit, ability_type_for_structure, location);
+        return true;
+    }
+    return false;
 }
