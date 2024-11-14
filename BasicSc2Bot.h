@@ -12,12 +12,36 @@ public:
 	virtual void OnGameStart();
 	virtual void OnStep();
 	
-	// bool BuildHatchery();
-	// bool TrainDrone();
-	// bool TrainOverlord();
+	bool BuildDrone();
+
+	void UpdateUnits();
+
+	// BotState NextState(BotState current);
+
+	std::vector<const sc2::Unit*> getLarva();
+
+	// State for each action
+	enum BotState {
+    BUILD_FIRST_DRONE,
+    BUILD_OVERLORD,
+    BUILD_SECOND_DRONE,
+    BUILD_FIRST_HATCHERY,
+    IDLE
+	};
 
 private:
 	// sc2::Point2D GetNearestExpansion();
+
+
+
+	BotState current_state;
+
+	std::vector<const sc2::Unit*> larva;
+
+	std::vector<const sc2::Unit*> drones;
+
+	std::vector<const sc2::Unit*> overlords;
+
 };
 
 #endif
