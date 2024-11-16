@@ -37,6 +37,7 @@ public:
     BUILD_SECOND_DRONE,
     BUILD_THIRD_DRONE,
 	EXPAND,
+	WAIT_FOR_HATCHERY,
     IDLE
 	};
 
@@ -55,6 +56,9 @@ private:
 	std::vector<const sc2::Unit*> drones;
 
 	std::vector<const sc2::Unit*> overlords;
+
+	// Create a pointer to hold each expansion
+	const sc2::Unit* first_expansion;
 
 };
 

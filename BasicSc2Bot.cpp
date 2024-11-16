@@ -12,7 +12,6 @@ struct IsTownHall {
     }
 };
 
-
 void BasicSc2Bot::OnGameStart() {
 
     std::cout << "Script starting " << std::endl;
@@ -25,6 +24,7 @@ void BasicSc2Bot::OnGameStart() {
     // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
     startLocation_ = Observation()->GetStartLocation();
     staging_location_ = startLocation_;
+
 }
 
 void BasicSc2Bot::OnStep() {
@@ -34,6 +34,12 @@ void BasicSc2Bot::OnStep() {
 
     // Current supply
     int current_supply = Observation()->GetFoodUsed();
+
+    sc2::Units town_halls;
+    first_expansion = nullptr;
+
+    // Max distance is for case of WAIT_FOR_HATCHERY but will remvoe it and put in own function later
+    float max_distance = 0.0f;
 
     // Switch case for all the steps we will do
     switch (current_state) {
@@ -72,51 +78,70 @@ void BasicSc2Bot::OnStep() {
             }
             break;
 
-
         case EXPAND:
             // Attempt to expand
             if (Observation()->GetMinerals() > 300) {
-                TryExpand(sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE);
-                std::cout << "EXPANDED" << std::endl;
-                current_state = IDLE;
+                if (TryExpand(sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
+                    std::cout << "CREATING EXPANSION" << std::endl;
+                    current_state = WAIT_FOR_HATCHERY;
+
+                }
+                else {
+                    std::cout << "Expansion failed" << std::endl;
+                }
+                
             }
             break;
 
-        case IDLE:
-            // std::cout << "Idle..." << std::endl;
+        
+        case WAIT_FOR_HATCHERY: 
 
-        break;
+            // Get all the town halls
+            town_halls = Observation()->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
+
+            // Find the Hatchery farthest from the starting location.
+            // Will have to change this if we want to select them based of build order or soemthing else
+            for (const auto& town_hall : town_halls) {
+                float distance = Distance2D(startLocation_, town_hall->pos);
+                if (distance > max_distance) {
+                    max_distance = distance;
+                    first_expansion = town_hall;
+                }
+            }
+
+            if (first_expansion) {
+                // Check the Hatchery is built.
+                if (first_expansion->build_progress >= 1.0f) {
+                    std::cout << "Constucting hatchery... (100%)" << std::endl;
+                    std::cout << "CREATED HATCHERY AT " << first_expansion->pos.x << ", " << first_expansion->pos.y << std::endl;
+
+                    // Queue up a drone or perform any other action
+                    Actions()->UnitCommand(first_expansion, sc2::ABILITY_ID::TRAIN_DRONE);
+
+                    // Transition to the next state
+                    current_state = IDLE;
+                } 
+                    // Progress bar
+                else if (first_expansion->build_progress == 0.25f) {
+                    std::cout << "Constucting hatchery... (25%)" << std::endl;
+                }
+                else if (first_expansion->build_progress == 0.5f) {
+                    std::cout << "Constucting hatchery... (50%)" << std::endl;
+                }
+                else if (first_expansion->build_progress == 0.75f) {
+                    std::cout << "Constucting hatchery... (75%)" << std::endl;
+                }
+            }
+            break;
+
+
+            case IDLE:
+            break;
+
+
 
     }
 }
-
-// // Function to build a hatchery from a drone
-// bool BasicSc2Bot::BuildHatchery() {
-
-//     // Find an drone to use
-//     auto drones = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-//         return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
-//     });
-//     if (drones.empty()) {
-//         return false;
-//     }
-
-//     // Find the nearest expansion location
-//     sc2::Point2D hatchery_location = GetNearestExpansion();
-
-//     // Send the drone to build a Hatchery at the nearest location
-//     Actions()->UnitCommand(drones.front(), sc2::ABILITY_ID::BUILD_HATCHERY, hatchery_location);
-//     std::cout << "Built Hatchery!" << std::endl;
-//     return true;
-// }
-
-// Takes the current state and finds what the next one will be
-// BotState BasicSc2Bot::NextState(BotState current) {
-//     // using UnderlyingType = std::underlying_type_t<BotState>;
-//     // UnderlyingType nextValue = (static_cast<UnderlyingType>(current) + 1) % static_cast<UnderlyingType>(BotState::Count);
-//     // return static_cast<BotState>(nextValue);
-// }
-
 
 // Function that attempts to build a drone. Returns true or false if it succeeds
 // Should update this to be a general use case for any unit
