@@ -12,13 +12,15 @@
 
 #include <math.h>
 
+using UnitTargets = std::map<sc2::UNIT_TYPEID, int>;
 class Swarm {
     public:
         class SwarmState {
-            std::map<sc2::UNIT_TYPEID, int> unitTargets;
+            public:
+            UnitTargets unitTargets;
 
             sc2::ObservationInterface* observation;
-
+            SwarmState(UnitTargets targets) : unitTargets(targets) {}
             void setUnitTarget(sc2::UNIT_TYPEID typeID, int count) {
                 unitTargets[typeID] = count;
             }
@@ -53,12 +55,15 @@ class Swarm {
         void changeState(SwarmState state);
     private:
         bool spawnUnit(sc2::UNIT_TYPEID, int count=1);
+        bool spawnUnit(std::pair<sc2::UNIT_TYPEID, int> unitTarget);
         bool spawnOverlord();
         bool spawnHatchery();
         bool spawnDrone();
         bool spawnZergling();
 
-        void updateUnits();
+        void updateUnitCounts();
+        void checkFoodAndOverlords();
+        void spawnUnits();
         
         sc2::ObservationInterface* observation;
         sc2::ActionInterface* actions;
