@@ -23,6 +23,9 @@ public:
 
 	bool TryBuildStructure(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Point2D location, bool isExpansion);
 
+	bool TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type);
+
+
 	// BotState NextState(BotState current);
 
 	std::vector<const sc2::Unit*> getLarva();
