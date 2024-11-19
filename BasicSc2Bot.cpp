@@ -121,7 +121,7 @@ void BasicSc2Bot::OnStep() {
                     // Transition to the next state
                     current_state = IDLE;
                 } 
-                    // Progress bar
+                // Progress bar
                 else if (first_expansion->build_progress == 0.25f) {
                     std::cout << "Constucting hatchery... (25%)" << std::endl;
                 }
@@ -132,11 +132,25 @@ void BasicSc2Bot::OnStep() {
                     std::cout << "Constucting hatchery... (75%)" << std::endl;
                 }
             }
+
+
+            // While we wait for hatchery, check for when we reach 200 minerals to make spawning pool
+            if (Observation()->GetMinerals() >= 200) {
+                std::cout << "Attempting to create spawning pool..." << std::endl;
+                TryBuildOnCreep(sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE);
+            }
+
+            
+
+            
+
+            
             break;
 
 
             case IDLE:
             break;
+
 
 
 
@@ -148,22 +162,22 @@ void BasicSc2Bot::OnStep() {
 bool BasicSc2Bot::BuildDrone() {
 
     if (Observation()->GetMinerals() < 50) {
-        std::cout << "Not enough minerals to train drone! (" << Observation()->GetMinerals() << "/50)" << std::endl;
+        // std::cout << "Not enough minerals to train drone! (" << Observation()->GetMinerals() << "/50)" << std::endl;
         return false;
     }
 
     if (larva.empty()) {
-        std::cout << "Not enough larva to train drone!" << std::endl;
+        // std::cout << "Not enough larva to train drone!" << std::endl;
         return false;
     }
 
     if (getAvailableSupply() < 1) {
-        std::cout << "Not enough supply to train drone!" << std::endl;
+        // std::cout << "Not enough supply to train drone!" << std::endl;
         return false;
     }
 
     // Attempt to build
-    Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
+    Actions()->UnitCommand(getLarva().front(), sc2::ABILITY_ID::TRAIN_DRONE);
 
     return true;
 }
@@ -171,20 +185,34 @@ bool BasicSc2Bot::BuildDrone() {
 bool BasicSc2Bot::BuildOverlord() {
 
     if (Observation()->GetMinerals() < 100) {
-        std::cout << "Not enough minerals to train overlord! (" << Observation()->GetMinerals() << "/100)" << std::endl;
+        // std::cout << "Not enough minerals to train overlord! (" << Observation()->GetMinerals() << "/100)" << std::endl;
         return false;
     }
 
     if (larva.empty()) {
-        std::cout << "Not enough larva to train overlord!" << std::endl;
+        // std::cout << "Not enough larva to train overlord!" << std::endl;
         return false;
     }
 
     // Attempt to build
-    Actions()->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
+    Actions()->UnitCommand(getLarva().front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
 
     return true;
 }
+
+// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L1363
+bool BasicSc2Bot::TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type) {
+    float rx = sc2::GetRandomScalar();
+    float ry = sc2::GetRandomScalar();
+    const sc2::ObservationInterface* observation = Observation();
+    sc2::Point2D build_location = sc2::Point2D(startLocation_.x + rx * 15, startLocation_.y + ry * 15);
+
+    if (observation->HasCreep(build_location)) {
+        return TryBuildStructure(ability_type_for_structure, unit_type, build_location, false);
+    }
+    return false;
+}
+
 
 // Update the vectors of the units we have avalible
 void BasicSc2Bot::UpdateUnits() {
