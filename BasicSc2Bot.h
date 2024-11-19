@@ -33,6 +33,8 @@ public:
 
 	float getAvailableSupply();
 
+	size_t CountUnitType(const sc2::ObservationInterface* observation, sc2::UnitTypeID unit_type);
+
 	// State for each action
 	enum BotState {
     BUILD_FIRST_DRONE,

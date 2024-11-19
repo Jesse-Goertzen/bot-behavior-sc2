@@ -115,10 +115,8 @@ void BasicSc2Bot::OnStep() {
                     std::cout << "Constucting hatchery... (100%)" << std::endl;
                     std::cout << "CREATED HATCHERY AT " << first_expansion->pos.x << ", " << first_expansion->pos.y << std::endl;
 
-                    // Queue up a drone or perform any other action
                     Actions()->UnitCommand(first_expansion, sc2::ABILITY_ID::TRAIN_DRONE);
 
-                    // Transition to the next state
                     current_state = IDLE;
                 } 
                 // Progress bar
@@ -133,25 +131,17 @@ void BasicSc2Bot::OnStep() {
                 }
             }
 
-
-            // While we wait for hatchery, check for when we reach 200 minerals to make spawning pool
-            if (Observation()->GetMinerals() >= 200) {
-                std::cout << "Attempting to create spawning pool..." << std::endl;
-                TryBuildOnCreep(sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE);
+            // While we wait for hatchery, check for when we reach 200 minerals to make a single spawning pool
+            if (CountUnitType(Observation(), sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL) < 1) {
+                if (TryBuildOnCreep(sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE)) {
+                }
             }
 
-            
-
-            
-
-            
             break;
 
 
             case IDLE:
             break;
-
-
 
 
     }
@@ -200,6 +190,7 @@ bool BasicSc2Bot::BuildOverlord() {
     return true;
 }
 
+// Attempt to build a structure on creep from a random location on the creep
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L1363
 bool BasicSc2Bot::TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type) {
     float rx = sc2::GetRandomScalar();
@@ -234,17 +225,18 @@ void BasicSc2Bot::UpdateUnits() {
 
 }
 
+// Return a list of all the larva
 std::vector<const sc2::Unit*> BasicSc2Bot::getLarva() {
         return larva;
 }
 
+// Return a list of all the drones
 std::vector<const sc2::Unit*> BasicSc2Bot::getDrones() {
         return drones;
 }
 
 // Get the available supply
 float BasicSc2Bot::getAvailableSupply() {
-
     float total_supply = Observation()->GetFoodCap();
     float used_supply = Observation()->GetFoodUsed();
     return total_supply - used_supply;
@@ -280,6 +272,7 @@ bool BasicSc2Bot::TryExpand(sc2::AbilityID build_ability, sc2::UnitTypeID worker
 
 }
 
+// Attempt to build structure. Return if it fails or not
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L316C1-L356C2
 bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Point2D location, bool isExpansion = false) {
 
@@ -320,4 +313,9 @@ bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, s
         return true;
     }
     return false;
+}
+
+// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L158
+size_t BasicSc2Bot::CountUnitType(const sc2::ObservationInterface* observation, sc2::UnitTypeID unit_type) {
+    return observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type)).size();
 }
