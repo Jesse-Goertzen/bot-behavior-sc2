@@ -17,6 +17,10 @@ public:
 
 	bool BuildOverlord();
 
+	bool BuildQueen();
+
+	void TryInjectLarva();
+
 	void UpdateUnits();
 
 	bool TryExpand(sc2::AbilityID build_ability, sc2::UnitTypeID worker_type);
