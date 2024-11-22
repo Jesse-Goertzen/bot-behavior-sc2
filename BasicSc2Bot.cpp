@@ -16,13 +16,16 @@ void BasicSc2Bot::OnGameStart() {
 
     std::cout << "Script starting " << std::endl;
 
+    // Get the observation object and store it in a pointer
+    observation = Observation();
+
     // Set the current state
     current_state = BUILD_FIRST_DRONE;
 
-    expansions_ = sc2::search::CalculateExpansionLocations(Observation(), Query());
+    expansions_ = sc2::search::CalculateExpansionLocations(observation, Query());
 
     // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
-    startLocation_ = Observation()->GetStartLocation();
+    startLocation_ = observation->GetStartLocation();
     staging_location_ = startLocation_;
 
 }
@@ -33,7 +36,7 @@ void BasicSc2Bot::OnStep() {
     UpdateUnits();
 
     // Current supply
-    int current_supply = Observation()->GetFoodUsed();
+    int current_supply = observation->GetFoodUsed();
 
     sc2::Units town_halls;
     first_expansion = nullptr;
@@ -80,7 +83,7 @@ void BasicSc2Bot::OnStep() {
 
         case EXPAND:
             // Attempt to expand
-            if (Observation()->GetMinerals() > 300) {
+            if (observation->GetMinerals() > 300) {
                 if (TryExpand(sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
                     std::cout << "CREATING EXPANSION" << std::endl;
                     current_state = WAIT_FOR_HATCHERY;
@@ -97,7 +100,7 @@ void BasicSc2Bot::OnStep() {
         case WAIT_FOR_HATCHERY: 
 
             // Get all the town halls
-            town_halls = Observation()->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
+            town_halls = observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
 
             // Find the Hatchery farthest from the starting location.
             // Will have to change this if we want to select them based of build order or soemthing else
@@ -132,7 +135,7 @@ void BasicSc2Bot::OnStep() {
             }
 
             // While we wait for hatchery, check for when we reach 200 minerals to make a single spawning pool
-            if (CountUnitType(Observation(), sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL) < 1) {
+            if (CountUnitType(observation, sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL) < 1) {
                 if (TryBuildOnCreep(sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE)) {
                 }
             }
@@ -151,8 +154,8 @@ void BasicSc2Bot::OnStep() {
 // Should update this to be a general use case for any unit
 bool BasicSc2Bot::BuildDrone() {
 
-    if (Observation()->GetMinerals() < 50) {
-        // std::cout << "Not enough minerals to train drone! (" << Observation()->GetMinerals() << "/50)" << std::endl;
+    if (observation->GetMinerals() < 50) {
+        // std::cout << "Not enough minerals to train drone! (" << observation_->GetMinerals() << "/50)" << std::endl;
         return false;
     }
 
@@ -174,8 +177,8 @@ bool BasicSc2Bot::BuildDrone() {
 
 bool BasicSc2Bot::BuildOverlord() {
 
-    if (Observation()->GetMinerals() < 100) {
-        // std::cout << "Not enough minerals to train overlord! (" << Observation()->GetMinerals() << "/100)" << std::endl;
+    if (observation->GetMinerals() < 100) {
+        // std::cout << "Not enough minerals to train overlord! (" << observation_->GetMinerals() << "/100)" << std::endl;
         return false;
     }
 
@@ -195,7 +198,6 @@ bool BasicSc2Bot::BuildOverlord() {
 bool BasicSc2Bot::TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type) {
     float rx = sc2::GetRandomScalar();
     float ry = sc2::GetRandomScalar();
-    const sc2::ObservationInterface* observation = Observation();
     sc2::Point2D build_location = sc2::Point2D(startLocation_.x + rx * 15, startLocation_.y + ry * 15);
 
     if (observation->HasCreep(build_location)) {
@@ -209,17 +211,17 @@ bool BasicSc2Bot::TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2
 void BasicSc2Bot::UpdateUnits() {
 
     // Update the larva vector
-    larva = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    larva = observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
         return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
     });
 
     // Update the drones vector
-    drones = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    drones = observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
         return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
     });
 
     // Update overlords
-    overlords = Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    overlords = observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
         return unit.unit_type == sc2::UNIT_TYPEID::ZERG_OVERLORD;
     });
 
@@ -237,8 +239,8 @@ std::vector<const sc2::Unit*> BasicSc2Bot::getDrones() {
 
 // Get the available supply
 float BasicSc2Bot::getAvailableSupply() {
-    float total_supply = Observation()->GetFoodCap();
-    float used_supply = Observation()->GetFoodUsed();
+    float total_supply = observation->GetFoodCap();
+    float used_supply = observation->GetFoodUsed();
     return total_supply - used_supply;
 
 }
@@ -246,7 +248,6 @@ float BasicSc2Bot::getAvailableSupply() {
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L390
 // Expands to nearest location and updates the start location to be between the new location and old bases.
 bool BasicSc2Bot::TryExpand(sc2::AbilityID build_ability, sc2::UnitTypeID worker_type) {
-    const sc2::ObservationInterface* observation = Observation();
     float minimum_distance = std::numeric_limits<float>::max();
     sc2::Point3D closest_expansion;
     for (const auto& expansion : expansions_) {
@@ -275,8 +276,6 @@ bool BasicSc2Bot::TryExpand(sc2::AbilityID build_ability, sc2::UnitTypeID worker
 // Attempt to build structure. Return if it fails or not
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L316C1-L356C2
 bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Point2D location, bool isExpansion = false) {
-
-    const sc2::ObservationInterface* observation = Observation();
     sc2::Units workers = observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
 
     //if we have no workers Don't build

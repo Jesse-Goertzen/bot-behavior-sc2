@@ -8,12 +8,24 @@
 #include "sc2utils/sc2_manage_process.h"
 #include "sc2utils/sc2_arg_parser.h"
 
+// Our managers
+#include "StateMachineManager.h"
+#include "UnitManager.h"
+#include "ExpansionManager.h"
+
 class BasicSc2Bot : public sc2::Agent {
 public:
+
+
 	virtual void OnGameStart();
 	virtual void OnStep();
+
+	StateMachineManager state_machine;
 	
 	bool BuildDrone();
+
+	// Observation object. This is how we find everything about the game
+	const sc2::ObservationInterface* observation;
 
 	bool BuildOverlord();
 
@@ -47,6 +59,11 @@ public:
 	};
 
 private:
+
+
+
+
+
 	// sc2::Point2D GetNearestExpansion();
 
 	// From here https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.h#L124C5-L124C38
