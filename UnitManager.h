@@ -6,22 +6,20 @@
 class UnitManager {
 public:
 
-
-
     // Return count of the unit type passed
-    size_t CountUnitType(const sc2::ObservationInterface* observation, sc2::UnitTypeID unit_type);
+    size_t CountUnitType(BasicSc2Bot& bot, sc2::UnitTypeID unit_type);
 
     // Build a drone unit
-    bool BuildDrone(const sc2::ObservationInterface* observation, sc2::ActionInterface* actions);
+    bool BuildDrone(BasicSc2Bot& bot);
 
     // Build an overlord unit
-    bool BuildOverlord(const sc2::ObservationInterface* observation, sc2::ActionInterface* actions);
+    bool BuildOverlord(BasicSc2Bot& bot);
 
     // Get a list of all larva
-    std::vector<const sc2::Unit*> getLarva();
+    std::vector<const sc2::Unit*> getLarva() { return larva; };
 
     // Update our list of all units
-    void UpdateUnits(const sc2::ObservationInterface* observation);
+    void UpdateUnits(BasicSc2Bot& bot);
 
 private:
 
