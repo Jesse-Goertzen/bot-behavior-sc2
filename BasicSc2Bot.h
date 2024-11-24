@@ -11,6 +11,7 @@ public:
 	virtual void OnGameStart();
 	virtual void OnStep();
 
+	// Each of our managers
 	StateMachineManager state_machine;
 	UnitManager unit_manager;
 	BuildingManager building_manager;
@@ -26,19 +27,15 @@ public:
 	std::vector<sc2::Point3D> GetExpansions() const { return expansions_; }
 	sc2::Point3D GetStartLocation() const { return startLocation_; }
 	sc2::Point3D GetStagingLocation() const { return staging_location_; }
-	const sc2::Unit* GetFirstExpansion() const { return first_expansion_; }
+
+	// Create a pointer to hold each expansion
+	const sc2::Unit* first_expansion;
 
 private:
-
-	// sc2::Point2D GetNearestExpansion();
-
 	// From here https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.h#L124C5-L124C38
 	std::vector<sc2::Point3D> expansions_;
 	sc2::Point3D startLocation_;
     sc2::Point3D staging_location_;
-
-	// Create a pointer to hold each expansion
-	const sc2::Unit* first_expansion_;
 
 };
 

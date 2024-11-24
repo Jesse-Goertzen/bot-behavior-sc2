@@ -16,6 +16,9 @@ public:
 
 private:
 
+    // Max distance is for case of WAIT_FOR_HATCHERY but will remvoe it and put in own function later
+    float max_distance = 0.0f;
+
 
 };
 

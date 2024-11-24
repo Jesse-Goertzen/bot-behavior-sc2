@@ -25,10 +25,9 @@ public:
 
 private:
 
+    // Vectors of all the units we have
 	std::vector<const sc2::Unit*> larva;
-
 	std::vector<const sc2::Unit*> drones;
-
 	std::vector<const sc2::Unit*> overlords;
 
 };
