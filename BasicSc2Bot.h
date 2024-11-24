@@ -27,11 +27,6 @@ public:
 	bool TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type);
 
 
-	// BotState NextState(BotState current);
-
-
-	size_t CountUnitType(const sc2::ObservationInterface* observation, sc2::UnitTypeID unit_type);
-
 
 
 private:

@@ -54,20 +54,13 @@ void BasicSc2Bot::OnStep() {
 
         // Start by building a drone
         case StateMachineManager::BUILD_FIRST_DRONE:
-            // Attempt to build drone
-            if (unit_manager.BuildDrone(observation, actions)) {
-                std::cout << "BUILT FIRST DRONE" << std::endl;
-                state_machine.current_state = StateMachineManager::BUILD_OVERLORD;
-            }
+            // Build First Drone
+            state_machine.BuildFirstDrone(*this);
             break;
 
-        // Then build a overlord when possible to make room for more units
-        case StateMachineManager::BUILD_OVERLORD:
-            // Attempt to build overlord
-            if (unit_manager.BuildOverlord(observation, actions)) {
-                std::cout << "BUILT FIRST OVERLORD" << std::endl;
-                state_machine.current_state = StateMachineManager::BUILD_SECOND_DRONE;
-            }
+        case StateMachineManager::BUILD_FIRST_OVERLORD:
+            // Build First overlord
+            state_machine.BuildFirstOverlord(*this);
             break;
 
         // Build two more drones
@@ -140,7 +133,7 @@ void BasicSc2Bot::OnStep() {
             }
 
             // While we wait for hatchery, check for when we reach 200 minerals to make a single spawning pool
-            if (CountUnitType(observation, sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL) < 1) {
+            if (unit_manager.CountUnitType(observation, sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL) < 1) {
                 if (TryBuildOnCreep(sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE)) {
                 }
             }
@@ -235,9 +228,4 @@ bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, s
         return true;
     }
     return false;
-}
-
-// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L158
-size_t BasicSc2Bot::CountUnitType(const sc2::ObservationInterface* observation, sc2::UnitTypeID unit_type) {
-    return observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type)).size();
 }
