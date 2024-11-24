@@ -1,5 +1,4 @@
 #include "utility.h"
-
 #include "BasicSc2Bot.h"
 
 // Get the available supply

@@ -1,4 +1,7 @@
 #include "StateMachineManager.h"
+#include "UnitManager.h"
+#include "BuildingManager.h"
+
 #include "BasicSc2Bot.h"
 
 // Moves us to the next state in the BotState list
@@ -9,7 +12,7 @@ void StateMachineManager::completeState() {
 // BUILD_FIRST_DRONE, BUILD_SECOND_DRONE, BUILD_THIRD_DRONE etc.
 void StateMachineManager::BuildDrone(BasicSc2Bot& bot) {
 
-    if (bot.unit_manager.BuildDrone(bot.observation, bot.actions)) {
+    if (bot.unit_manager.BuildDrone(bot)) {
         // State is complete
         std::cout << ">Completed state: " << current_state << std::endl;
         completeState();
@@ -20,7 +23,7 @@ void StateMachineManager::BuildDrone(BasicSc2Bot& bot) {
 // BUILD_FIRST_OVERLORD
 void StateMachineManager::BuildOverlord(BasicSc2Bot& bot) {
 
-    if (bot.unit_manager.BuildOverlord(bot.observation, bot.actions)) {
+    if (bot.unit_manager.BuildOverlord(bot)) {
         // State is complete
         std::cout << ">Completed state: " << current_state << std::endl;
         completeState();
@@ -28,20 +31,20 @@ void StateMachineManager::BuildOverlord(BasicSc2Bot& bot) {
 }
 
 // FIRST_EXPAND
-// void StateMachineManager::FirstExpand(BasicSc2Bot& bot) {
+void StateMachineManager::FirstExpand(BasicSc2Bot& bot) {
 
-//     if (bot.observation->GetMinerals() > 300) {
+    if (bot.observation->GetMinerals() > 300) {
 
-//         if (TryExpand(sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
+        if (bot.building_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
 
-//             // State is complete
-//             std::cout << ">Completed state: " << current_state << std::endl;
-//             completeState();
+            // State is complete
+            std::cout << ">Completed state: " << current_state << std::endl;
+            completeState();
 
-//         }
-//         else {
-//             std::cout << ">Failed state: " << current_state << std::endl;
-//         }
+        }
+        else {
+            std::cout << ">Failed state: " << current_state << std::endl;
+        }
         
-//     }
-// }
+    }
+}

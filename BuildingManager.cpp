@@ -1,4 +1,6 @@
 #include "BuildingManager.h"
+#include "BasicSc2Bot.h"
+#include "utility.h"
 
 // Attempt to build a structure on creep from a random location on the creep
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L1363

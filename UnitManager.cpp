@@ -1,7 +1,9 @@
 #include "UnitManager.h"
 #include "StateMachineManager.h"
+#include "BuildingManager.h"
 
 #include "BasicSc2Bot.h"
+#include "utility.h"
 
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L158
 // Count the types of the passed unit

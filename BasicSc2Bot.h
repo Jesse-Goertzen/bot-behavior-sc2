@@ -1,11 +1,9 @@
 #ifndef BASIC_SC2_BOT_H_
 #define BASIC_SC2_BOT_H_
 
-// Our managers
 #include "StateMachineManager.h"
 #include "UnitManager.h"
 #include "BuildingManager.h"
-
 
 class BasicSc2Bot : public sc2::Agent {
 public:

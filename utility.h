@@ -3,6 +3,8 @@
 
 #include "header_files.h"
 
+// Forward declaration so we dont use the whole include and have a circular dependancy
+class BasicSc2Bot;
 
 // Get available supply
 float getAvailableSupply(BasicSc2Bot& bot);

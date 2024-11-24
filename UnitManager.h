@@ -1,7 +1,9 @@
-#ifndef UNITMANAGER_H
-#define UNITMANAGER_H
+#ifndef UNIT_MANAGER_H
+#define UNIT_MANAGER_H
 
 #include "header_files.h"
+
+class BasicSc2Bot;
 
 class UnitManager {
 public:

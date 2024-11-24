@@ -1,8 +1,6 @@
-#pragma once
-#include "header_files.h"
+#ifndef STATE_MACHINE_MANAGER_H
+#define STATE_MACHINE_MANAGER_H
 
-// #include "BasicSc2Bot.h"
-// Forward declaration so we dont use the whole include and have a circular dependancy
 class BasicSc2Bot;
 
 class StateMachineManager {
@@ -40,3 +38,6 @@ private:
 
     
 };
+
+
+#endif
