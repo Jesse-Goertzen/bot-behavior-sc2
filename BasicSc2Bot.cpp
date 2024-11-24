@@ -19,12 +19,17 @@ void BasicSc2Bot::OnGameStart() {
     // Get the observation object and store it in a pointer
     observation = Observation();
 
-    // Set the current state
-    current_state = BUILD_FIRST_DRONE;
+    // Get the action interface and store it as a pointer
+    actions = Actions();
 
+    // Set the current state
+    state_machine.current_state = StateMachineManager::BUILD_FIRST_DRONE;
+
+    // Get all expansion locations
     expansions_ = sc2::search::CalculateExpansionLocations(observation, Query());
 
     // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
+    // Set the start location
     startLocation_ = observation->GetStartLocation();
     staging_location_ = startLocation_;
 
@@ -33,7 +38,7 @@ void BasicSc2Bot::OnGameStart() {
 void BasicSc2Bot::OnStep() {
     // On each step update the amount of units. This updates larva, overlord and drone vectors in the class
     // Can get the size of each using larva.size() for example
-    UpdateUnits();
+    unit_manager.UpdateUnits(observation);
 
     // Current supply
     int current_supply = observation->GetFoodUsed();
@@ -45,48 +50,48 @@ void BasicSc2Bot::OnStep() {
     float max_distance = 0.0f;
 
     // Switch case for all the steps we will do
-    switch (current_state) {
+    switch (state_machine.current_state) {
 
         // Start by building a drone
-        case BUILD_FIRST_DRONE:
+        case StateMachineManager::BUILD_FIRST_DRONE:
             // Attempt to build drone
-            if (BuildDrone()) {
+            if (unit_manager.BuildDrone(observation, actions)) {
                 std::cout << "BUILT FIRST DRONE" << std::endl;
-                current_state = BUILD_OVERLORD;
+                state_machine.current_state = StateMachineManager::BUILD_OVERLORD;
             }
             break;
 
         // Then build a overlord when possible to make room for more units
-        case BUILD_OVERLORD:
+        case StateMachineManager::BUILD_OVERLORD:
             // Attempt to build overlord
-            if (BuildOverlord()) {
+            if (unit_manager.BuildOverlord(observation, actions)) {
                 std::cout << "BUILT FIRST OVERLORD" << std::endl;
-                current_state = BUILD_SECOND_DRONE;
+                state_machine.current_state = StateMachineManager::BUILD_SECOND_DRONE;
             }
             break;
 
         // Build two more drones
-        case BUILD_SECOND_DRONE:
+        case StateMachineManager::BUILD_SECOND_DRONE:
             // Attempt to build drone
-            if (BuildDrone()) {
+            if (unit_manager.BuildDrone(observation, actions)) {
                 std::cout << "BUILT SECOND DRONE" << std::endl;
-                current_state = BUILD_THIRD_DRONE;
+                state_machine.current_state = StateMachineManager::BUILD_THIRD_DRONE;
             }
             break;
-        case BUILD_THIRD_DRONE:
+        case StateMachineManager::BUILD_THIRD_DRONE:
             // Attempt to build drone
-            if (BuildDrone()) {
+            if (unit_manager.BuildDrone(observation, actions)) {
                 std::cout << "BUILT THIRD DRONE" << std::endl;
-                current_state = EXPAND;
+                state_machine.current_state = StateMachineManager::EXPAND;
             }
             break;
 
-        case EXPAND:
+        case StateMachineManager::EXPAND:
             // Attempt to expand
             if (observation->GetMinerals() > 300) {
                 if (TryExpand(sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
                     std::cout << "CREATING EXPANSION" << std::endl;
-                    current_state = WAIT_FOR_HATCHERY;
+                    state_machine.current_state = StateMachineManager::WAIT_FOR_HATCHERY;
 
                 }
                 else {
@@ -97,7 +102,7 @@ void BasicSc2Bot::OnStep() {
             break;
 
         
-        case WAIT_FOR_HATCHERY: 
+        case StateMachineManager::WAIT_FOR_HATCHERY: 
 
             // Get all the town halls
             town_halls = observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
@@ -118,9 +123,9 @@ void BasicSc2Bot::OnStep() {
                     std::cout << "Constucting hatchery... (100%)" << std::endl;
                     std::cout << "CREATED HATCHERY AT " << first_expansion->pos.x << ", " << first_expansion->pos.y << std::endl;
 
-                    Actions()->UnitCommand(first_expansion, sc2::ABILITY_ID::TRAIN_DRONE);
+                    actions->UnitCommand(first_expansion, sc2::ABILITY_ID::TRAIN_DRONE);
 
-                    current_state = IDLE;
+                    state_machine.current_state = StateMachineManager::IDLE;
                 } 
                 // Progress bar
                 else if (first_expansion->build_progress == 0.25f) {
@@ -143,54 +148,11 @@ void BasicSc2Bot::OnStep() {
             break;
 
 
-            case IDLE:
+            case StateMachineManager::IDLE:
             break;
 
 
     }
-}
-
-// Function that attempts to build a drone. Returns true or false if it succeeds
-// Should update this to be a general use case for any unit
-bool BasicSc2Bot::BuildDrone() {
-
-    if (observation->GetMinerals() < 50) {
-        // std::cout << "Not enough minerals to train drone! (" << observation_->GetMinerals() << "/50)" << std::endl;
-        return false;
-    }
-
-    if (larva.empty()) {
-        // std::cout << "Not enough larva to train drone!" << std::endl;
-        return false;
-    }
-
-    if (getAvailableSupply() < 1) {
-        // std::cout << "Not enough supply to train drone!" << std::endl;
-        return false;
-    }
-
-    // Attempt to build
-    Actions()->UnitCommand(getLarva().front(), sc2::ABILITY_ID::TRAIN_DRONE);
-
-    return true;
-}
-
-bool BasicSc2Bot::BuildOverlord() {
-
-    if (observation->GetMinerals() < 100) {
-        // std::cout << "Not enough minerals to train overlord! (" << observation_->GetMinerals() << "/100)" << std::endl;
-        return false;
-    }
-
-    if (larva.empty()) {
-        // std::cout << "Not enough larva to train overlord!" << std::endl;
-        return false;
-    }
-
-    // Attempt to build
-    Actions()->UnitCommand(getLarva().front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
-
-    return true;
 }
 
 // Attempt to build a structure on creep from a random location on the creep
@@ -204,45 +166,6 @@ bool BasicSc2Bot::TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2
         return TryBuildStructure(ability_type_for_structure, unit_type, build_location, false);
     }
     return false;
-}
-
-
-// Update the vectors of the units we have avalible
-void BasicSc2Bot::UpdateUnits() {
-
-    // Update the larva vector
-    larva = observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
-    });
-
-    // Update the drones vector
-    drones = observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
-    });
-
-    // Update overlords
-    overlords = observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_OVERLORD;
-    });
-
-}
-
-// Return a list of all the larva
-std::vector<const sc2::Unit*> BasicSc2Bot::getLarva() {
-        return larva;
-}
-
-// Return a list of all the drones
-std::vector<const sc2::Unit*> BasicSc2Bot::getDrones() {
-        return drones;
-}
-
-// Get the available supply
-float BasicSc2Bot::getAvailableSupply() {
-    float total_supply = observation->GetFoodCap();
-    float used_supply = observation->GetFoodUsed();
-    return total_supply - used_supply;
-
 }
 
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L390
@@ -308,7 +231,7 @@ bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, s
     }
     // Check to see if unit can build there
     if (Query()->Placement(ability_type_for_structure, location)) {
-        Actions()->UnitCommand(unit, ability_type_for_structure, location);
+        actions->UnitCommand(unit, ability_type_for_structure, location);
         return true;
     }
     return false;

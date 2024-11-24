@@ -1,5 +1,5 @@
 #pragma once
-#include "sc2api/sc2_api.h"
+#include "header_files.h"
 
 class StateMachineManager {
 public:
@@ -7,7 +7,7 @@ public:
     // Moves us to the next state
     void completeState();
 
-private:
+
 
     // States of the bot, in order of completion
 	enum BotState {
@@ -20,6 +20,11 @@ private:
         IDLE
 	};
 
-    // What satte the bot is on right now
+    // What state the bot is currently in
     BotState current_state;
+
+private:
+
+
+    
 };
