@@ -4,7 +4,7 @@
 // Our managers
 #include "StateMachineManager.h"
 #include "UnitManager.h"
-#include "ExpansionManager.h"
+#include "BuildingManager.h"
 
 
 class BasicSc2Bot : public sc2::Agent {
@@ -15,6 +15,7 @@ public:
 
 	StateMachineManager state_machine;
 	UnitManager unit_manager;
+	BuildingManager building_manager;
 
 	// Observation object. This is how we find everything about the game
 	const sc2::ObservationInterface* observation;
@@ -23,15 +24,11 @@ public:
 	// Query interface
 	sc2::QueryInterface * query;
 
-
-	bool TryExpand(sc2::AbilityID build_ability, sc2::UnitTypeID worker_type);
-
-	bool TryBuildStructure(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Point2D location, bool isExpansion);
-
-	bool TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type);
-
-
-
+	// Inline getters for private values
+	std::vector<sc2::Point3D> GetExpansions() const { return expansions_; }
+	sc2::Point3D GetStartLocation() const { return startLocation_; }
+	sc2::Point3D GetStagingLocation() const { return staging_location_; }
+	const sc2::Unit* GetFirstExpansion() const { return first_expansion_; }
 
 private:
 
@@ -42,10 +39,8 @@ private:
 	sc2::Point3D startLocation_;
     sc2::Point3D staging_location_;
 
-
-
 	// Create a pointer to hold each expansion
-	const sc2::Unit* first_expansion;
+	const sc2::Unit* first_expansion_;
 
 };
 
