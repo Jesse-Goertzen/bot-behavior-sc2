@@ -11,10 +11,14 @@ public:
     // Moves us to the next state
     void completeState();
 
-    // First state
-    void BuildFirstDrone(BasicSc2Bot& bot);
+    // States that just build a drone
+    void BuildDrone(BasicSc2Bot& bot);
 
-    void BuildFirstOverlord(BasicSc2Bot& bot);
+    // Build Overlord
+    void BuildOverlord(BasicSc2Bot& bot);
+
+    // First expansion attempt
+    void FirstExpand(BasicSc2Bot& bot);
 
 
     // States of the bot, in order of completion
@@ -23,7 +27,7 @@ public:
         BUILD_FIRST_OVERLORD,
         BUILD_SECOND_DRONE,
         BUILD_THIRD_DRONE,
-        EXPAND,
+        FIRST_EXPAND,
         WAIT_FOR_HATCHERY,
         IDLE
 	};

@@ -18,7 +18,11 @@ public:
 
 	// Observation object. This is how we find everything about the game
 	const sc2::ObservationInterface* observation;
+	// Action object. This is how we tell units to do stuff
 	sc2::ActionInterface* actions;
+	// Query interface
+	sc2::QueryInterface * query;
+
 
 	bool TryExpand(sc2::AbilityID build_ability, sc2::UnitTypeID worker_type);
 

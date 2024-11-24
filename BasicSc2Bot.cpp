@@ -22,11 +22,14 @@ void BasicSc2Bot::OnGameStart() {
     // Get the action interface and store it as a pointer
     actions = Actions();
 
+    // Query interface store as pointer
+    query = Query();
+
     // Set the current state
     state_machine.current_state = StateMachineManager::BUILD_FIRST_DRONE;
 
     // Get all expansion locations
-    expansions_ = sc2::search::CalculateExpansionLocations(observation, Query());
+    expansions_ = sc2::search::CalculateExpansionLocations(observation, query);
 
     // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
     // Set the start location
@@ -54,44 +57,29 @@ void BasicSc2Bot::OnStep() {
 
         // Start by building a drone
         case StateMachineManager::BUILD_FIRST_DRONE:
-            // Build First Drone
-            state_machine.BuildFirstDrone(*this);
+            // Build first Drone
+            state_machine.BuildDrone(*this);
             break;
 
         case StateMachineManager::BUILD_FIRST_OVERLORD:
-            // Build First overlord
-            state_machine.BuildFirstOverlord(*this);
+            // Build first overlord
+            state_machine.BuildOverlord(*this);
             break;
 
-        // Build two more drones
         case StateMachineManager::BUILD_SECOND_DRONE:
-            // Attempt to build drone
-            if (unit_manager.BuildDrone(observation, actions)) {
-                std::cout << "BUILT SECOND DRONE" << std::endl;
-                state_machine.current_state = StateMachineManager::BUILD_THIRD_DRONE;
-            }
+            // Build second drone
+            state_machine.BuildDrone(*this);
             break;
+
+        
         case StateMachineManager::BUILD_THIRD_DRONE:
-            // Attempt to build drone
-            if (unit_manager.BuildDrone(observation, actions)) {
-                std::cout << "BUILT THIRD DRONE" << std::endl;
-                state_machine.current_state = StateMachineManager::EXPAND;
-            }
+            // Build third drone
+            state_machine.BuildDrone(*this);
             break;
 
-        case StateMachineManager::EXPAND:
+        case StateMachineManager::FIRST_EXPAND:
             // Attempt to expand
-            if (observation->GetMinerals() > 300) {
-                if (TryExpand(sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
-                    std::cout << "CREATING EXPANSION" << std::endl;
-                    state_machine.current_state = StateMachineManager::WAIT_FOR_HATCHERY;
 
-                }
-                else {
-                    std::cout << "Expansion failed" << std::endl;
-                }
-                
-            }
             break;
 
         
@@ -173,7 +161,7 @@ bool BasicSc2Bot::TryExpand(sc2::AbilityID build_ability, sc2::UnitTypeID worker
         }
 
         if (current_distance < minimum_distance) {
-            if (Query()->Placement(build_ability, expansion)) {
+            if (query->Placement(build_ability, expansion)) {
                 closest_expansion = expansion;
                 minimum_distance = current_distance;
             }
@@ -212,7 +200,7 @@ bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, s
     const sc2::Unit* unit = GetRandomEntry(workers);
 
     // Check to see if unit can make it there
-    if (Query()->PathingDistance(unit, location) < 0.1f) {
+    if (query->PathingDistance(unit, location) < 0.1f) {
         return false;
     }
     if (!isExpansion) {
@@ -223,7 +211,7 @@ bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, s
         }
     }
     // Check to see if unit can build there
-    if (Query()->Placement(ability_type_for_structure, location)) {
+    if (query->Placement(ability_type_for_structure, location)) {
         actions->UnitCommand(unit, ability_type_for_structure, location);
         return true;
     }
