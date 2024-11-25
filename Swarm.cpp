@@ -12,7 +12,6 @@ void Swarm::onStep() {
     spawnUnits();
 }
 
-void 
 
 void Swarm::updateUnitCounts() {
     sc2::Units units = observation->GetUnits(sc2::Unit::Alliance::Self);
@@ -34,7 +33,6 @@ void Swarm::updateUnitCounts() {
     }
 }
 
-void 
 void Swarm::spawnUnits() {
     for (auto &unitTarget : state.unitTargets) {
         spawnUnit(unitTarget.first, unitTarget.second);
