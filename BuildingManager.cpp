@@ -1,6 +1,7 @@
 #include "BuildingManager.h"
 #include "BasicSc2Bot.h"
 #include "utility.h"
+// #include "sc2_unit_filters.h"
 
 // Attempt to build a structure on creep from a random location on the creep
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L1363
@@ -59,7 +60,7 @@ bool BuildingManager::TryBuildStructure(BasicSc2Bot& bot, sc2::AbilityID ability
             if (order.ability_id == ability_type_for_structure) {
                 return false;
             }
-        }
+        }   
     }
 
     // If no worker is already building one, get a random worker to build one
@@ -84,4 +85,59 @@ bool BuildingManager::TryBuildStructure(BasicSc2Bot& bot, sc2::AbilityID ability
         return true;
     }
     return false;
+}
+
+// https://github.com/Blizzard/s2client-api/blob/master/examples/common/bot_examples.cc#L359
+//Try to build a structure based on tag, Used mostly for Vespene, since the pathing check will fail even though the geyser is "Pathable"
+bool BuildingManager::TryBuildStructure(BasicSc2Bot& bot, sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Tag location_tag) {
+    sc2::Units workers = bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
+    const sc2::Unit* target = bot.observation->GetUnit(location_tag);
+
+    if (workers.empty()) {
+        return false;
+    }
+
+    // Check to see if there is already a worker heading out to build it
+    for (const auto& worker : workers) {
+        for (const auto& order : worker->orders) {
+            if (order.ability_id == ability_type_for_structure) {
+                return false;
+            }
+        }
+    }
+
+    // If no worker is already building one, get a random worker to build one
+    const sc2::Unit* unit = GetRandomEntry(workers);
+
+    // Check to see if unit can build there
+    if (bot.query->Placement(ability_type_for_structure, target->pos)) {
+        bot.actions->UnitCommand(unit, ability_type_for_structure, target);
+        return true;
+    }
+    return false;
+
+}
+
+bool BuildingManager::TryBuildGas(BasicSc2Bot& bot, sc2::AbilityID build_ability, sc2::UnitTypeID worker_type, sc2::Point2D base_location) {
+    sc2::Units geysers = bot.observation->GetUnits(sc2::Unit::Alliance::Neutral, IsVespeneGeyser());
+
+    //only search within this radius
+    float minimum_distance = 15.0f;
+    sc2::Tag closestGeyser = 0;
+    for (const auto& geyser : geysers) {
+        float current_distance = Distance2D(base_location, geyser->pos);
+        if (current_distance < minimum_distance) {
+            if (bot.query->Placement(build_ability, geyser->pos)) {
+                minimum_distance = current_distance;
+                closestGeyser = geyser->tag;
+            }
+        }
+    }
+
+    // In the case where there are no more available geysers nearby
+    if (closestGeyser == 0) {
+        return false;
+    }
+    return TryBuildStructure(bot, build_ability, worker_type, closestGeyser);
+
 }

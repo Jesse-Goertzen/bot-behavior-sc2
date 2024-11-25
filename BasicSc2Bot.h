@@ -11,6 +11,8 @@ public:
 	virtual void OnGameStart();
 	virtual void OnStep();
 
+	void HandleDrones();
+
 	// Each of our managers
 	StateMachineManager state_machine;
 	UnitManager unit_manager;

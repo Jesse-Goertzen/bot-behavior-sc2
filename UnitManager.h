@@ -23,13 +23,24 @@ public:
     // Update our list of all units
     void UpdateUnits(BasicSc2Bot& bot);
 
+    void HandleQueenLarvae(BasicSc2Bot& bot);
+
+
+    void HandleIdleDrones(BasicSc2Bot& bot);
+
 private:
 
     // Vectors of all the units we have
-	std::vector<const sc2::Unit*> larva;
-	std::vector<const sc2::Unit*> drones;
-	std::vector<const sc2::Unit*> overlords;
-
+	sc2::Units larva;
+	sc2::Units drones;
+	sc2::Units overlords;
+    sc2::Units hatcheries;
+    sc2::Units queens;
+    sc2::Units roaches;
+    sc2::Units zerglings;
+    
+    const sc2::Unit* FindNearestMineralPatch(BasicSc2Bot& bot, const sc2::Point2D& start);
+    void UnitManager::MineIdleWorkers(BasicSc2Bot& bot, const sc2::Unit* worker, sc2::AbilityID worker_gather_command, sc2::UnitTypeID vespene_building_type);
 };
 
 #endif

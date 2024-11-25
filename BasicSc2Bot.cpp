@@ -19,7 +19,7 @@ void BasicSc2Bot::OnGameStart() {
     query = Query();
 
     // Set the current state
-    state_machine.current_state = StateMachineManager::BUILD_FIRST_DRONE;
+    state_machine.current_state = StateMachineManager::START;
 
     // Get all expansion locations
     expansions_ = sc2::search::CalculateExpansionLocations(observation, query);
@@ -37,39 +37,29 @@ void BasicSc2Bot::OnStep() {
 
     // Switch case for all the steps we will do
     switch (state_machine.current_state) {
-
-        // Start by building a drone
-        case StateMachineManager::BUILD_FIRST_DRONE:
-            // Build first Drone
-            state_machine.BuildDrone(*this);
-            break;
-
-        case StateMachineManager::BUILD_FIRST_OVERLORD:
-            // Build first overlord
-            state_machine.BuildOverlord(*this);
-            break;
-
-        case StateMachineManager::BUILD_SECOND_DRONE:
-            // Build second drone
-            state_machine.BuildDrone(*this);
-            break;
         
-        case StateMachineManager::BUILD_THIRD_DRONE:
-            // Build third drone
-            state_machine.BuildDrone(*this);
+        case StateMachineManager::START:
+            std::cout << "Starting State" << std::endl;
+            state_machine.StartingState(*this);
             break;
 
-        case StateMachineManager::FIRST_EXPAND:
-            // Attempt to expand
-            state_machine.FirstExpand(*this);
-            break;
-        
-        case StateMachineManager::WAIT_FOR_HATCHERY: 
-            // Wait for hatchery to finish and do other things
-            state_machine.WaitForHatchery(*this);
+        case StateMachineManager::PRE_FIRST_EXPANSION:
+            std::cout << "Pre Expansion State" << std::endl;
+            state_machine.PreFirstExpansionState(*this);
             break;
 
-            case StateMachineManager::IDLE:
+        case StateMachineManager::FIRST_EXPANSION:
+            std::cout << "Expansion State" << std::endl;
+            state_machine.FirstExpansionState(*this);
             break;
+
+        case StateMachineManager::POST_FIRST_EXPANSION:
+            std::cout << "Post Expansion State" << std::endl;
+            state_machine.PostFirstExpansionState(*this);
+            break;
+
+        case StateMachineManager::QUEENING:
+            std::cout << "Queen State" << std::endl;
+            state_machine.QueeningState(*this);
     }
 }

@@ -23,14 +23,29 @@ public:
 
     // States of the bot, in order of completion
 	enum BotState {
-        BUILD_FIRST_DRONE,
-        BUILD_FIRST_OVERLORD,
-        BUILD_SECOND_DRONE,
-        BUILD_THIRD_DRONE,
-        FIRST_EXPAND,
-        WAIT_FOR_HATCHERY,
-        IDLE
+        START,
+        PRE_FIRST_EXPANSION,
+        FIRST_EXPANSION,
+        POST_FIRST_EXPANSION,
+        QUEENING,
+
+
+
+        // BUILD_FIRST_DRONE,
+        // BUILD_FIRST_OVERLORD,
+        // BUILD_SECOND_DRONE,
+        // BUILD_THIRD_DRONE,
+        // BUILD_FOURTH_DRONE,
+        // FIRST_EXPAND,
+        // WAIT_FOR_HATCHERY,
+        // IDLE
 	};
+
+    void StartingState(BasicSc2Bot& bot);
+    void PreFirstExpansionState(BasicSc2Bot& bot);
+    void FirstExpansionState(BasicSc2Bot& bot);
+    void PostFirstExpansionState(BasicSc2Bot& bot);
+    void QueeningState(BasicSc2Bot& bot);
 
     // What state the bot is currently in
     BotState current_state;
