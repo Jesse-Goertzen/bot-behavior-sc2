@@ -48,7 +48,7 @@ bool UnitManager::BuildDrone(BasicSc2Bot& bot) {
     }
 
     // Attempt to build
-    bot.actions->UnitCommand(getLarva().front(), sc2::ABILITY_ID::TRAIN_DRONE);
+    bot.actions->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
 
     return true;
 }
@@ -67,7 +67,7 @@ bool UnitManager::BuildOverlord(BasicSc2Bot& bot) {
 
     // spawn an overlord when appropriate, if we are well below our food cap, no need to spawn an overlord
     if (bot.observation->GetFoodUsed() >= bot.observation->GetFoodCap() - 4) {
-        bot.actions->UnitCommand(getLarva().front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
+        bot.actions->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
         return true;
     }
 
@@ -107,6 +107,11 @@ void UnitManager::UpdateUnits(BasicSc2Bot& bot) {
     zerglings = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
         return unit.unit_type == sc2::UNIT_TYPEID::ZERG_ZERGLING;
     });
+
+    extractors = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR;
+    });
+    
 }
 
 
@@ -114,7 +119,7 @@ void HandleQueenLarvae(BasicSc2Bot& bot) {
 
 }
 
-void AssignDroneToAvailableExtractor(BasicSc2Bot& bot, )
+// void AssignDroneToAvailableExtractor(BasicSc2Bot& bot, )
 
 // void UnitManager::HandleIdleDrones(BasicSc2Bot& bot) {
 //    // Assume that update units has been called

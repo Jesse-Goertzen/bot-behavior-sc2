@@ -65,7 +65,7 @@ void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
 //          - build an extractor
 //          - build a spawning pool
 void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
-    const size_t DRONE_TARGET = 41; // max the first hatchery, and the new extractor
+    const size_t DRONE_TARGET = 19; // max the first hatchery, and the new extractor
     const size_t EXTRACTOR_TARGET = 1;
     const size_t SPAWN_POOL_TARGET = 1;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
@@ -101,7 +101,22 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
         }
     }
 
-    if (bot.observation->GetUnits(sc2::))
+    // gross but hopefully works? lmao
+    if (bot.unit_manager.extractors.size() > 0) {
+        for (const auto& hatchery : bot.unit_manager.hatcheries) {
+            if (hatchery->build_progress == 1 && hatchery->assigned_harvesters > hatchery->ideal_harvesters) {
+                int excess_drones = hatchery->assigned_harvesters - hatchery->ideal_harvesters;
+                for (const auto& drone : bot.unit_manager.drones) {
+                    if (drone->orders.front().target_unit_tag == hatchery->tag) {
+                        bot.actions->UnitCommand(drone, sc2::ABILITY_ID::HARVEST_GATHER_DRONE, bot.unit_manager.extractors.front());
+                        --excess_drones;
+                        if (excess_drones == 0) break;
+                    }
+                }
+                break;
+            }
+        }
+    }
     
     if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
         completeState();
