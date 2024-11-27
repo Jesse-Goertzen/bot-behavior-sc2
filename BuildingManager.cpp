@@ -5,10 +5,10 @@
 
 // Attempt to build a structure on creep from a random location on the creep
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L1363
-bool BuildingManager::TryBuildOnCreep(BasicSc2Bot& bot, sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type) {
+bool BuildingManager::TryBuildOnCreep(BasicSc2Bot& bot, sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Point2D loc) {
     float rx = sc2::GetRandomScalar();
     float ry = sc2::GetRandomScalar();
-    sc2::Point2D build_location = sc2::Point2D(bot.GetStartLocation().x + rx * 15, bot.GetStartLocation().y + ry * 15);
+    sc2::Point2D build_location = sc2::Point2D(loc.x + rx * 15, loc.y + ry * 15);
 
     if (bot.observation->HasCreep(build_location)) {
         return TryBuildStructure(bot, ability_type_for_structure, unit_type, build_location, false);

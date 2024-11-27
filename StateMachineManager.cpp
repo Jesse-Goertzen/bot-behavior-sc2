@@ -87,7 +87,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     }
 
     if (spawn_pool_count < 1 && bot.observation->GetMinerals() > 200) {
-        if (bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE)) {
+        if (bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation())) {
             // ++spawn_pool_count;
         }
     }
@@ -123,8 +123,55 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
 
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
+    
 }
 
+
+void StateMachineManager::RoachWarrenState(BasicSc2Bot& bot) {
+    const size_t DRONE_TARGET = 41;
+
+    bot.unit_manager.BuildOverlord(bot);
+    bot.unit_manager.HandleQueenLarvae(bot);
+
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE) < DRONE_TARGET) {
+        bot.unit_manager.BuildDrone(bot);
+    }
+
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ROACHWARREN) < 1) {
+        bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_ROACHWARREN, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation());    
+    }
+
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ROACHWARREN) > 0) {
+        completeState();
+    }
+}
+
+void StateMachineManager::BaseDefenseState(BasicSc2Bot& bot) {
+    const size_t DRONE_TARGET = 41;
+    const size_t SPORE_CRAWLER_TARGET = 2;
+
+    bot.unit_manager.BuildOverlord(bot);
+    bot.unit_manager.HandleQueenLarvae(bot);
+
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPORECRAWLER) < SPORE_CRAWLER_TARGET) {
+        // could be an issue if building the spore crawlers fails for some reason, would have to check where to build
+        // if we want one at each hatchery
+        for (const auto& hatchery : bot.unit_manager.hatcheries) {
+            bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPORECRAWLER, sc2::UNIT_TYPEID::ZERG_DRONE, hatchery->pos);
+        }
+    }
+
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE) < DRONE_TARGET) {
+        bot.unit_manager.BuildDrone(bot);
+    }
+
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPORECRAWLER) >= SPORE_CRAWLER_TARGET) {
+        completeState();
+    }
+}
+
+
+// void StateMachineManager::
 // // WAIT_FOR_HATCHERY
 // void StateMachineManager::WaitForHatchery(BasicSc2Bot& bot) {
     

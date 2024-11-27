@@ -37,6 +37,9 @@ public:
     void PostFirstExpansionState(BasicSc2Bot& bot);
     void QueeningState(BasicSc2Bot& bot);
 
+    void RoachWarrenState(BasicSc2Bot& bot);
+    void BaseDefenseState(BasicSc2Bot& bot);
+
     // What state the bot is currently in
     BotState current_state;
 
