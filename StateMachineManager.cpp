@@ -47,15 +47,8 @@ void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
     if (bot.observation->GetMinerals() > 300) {
 
         if (bot.building_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
-
-            // State is complete
-            // std::cout << ">Completed state: " << current_state << std::endl;
             completeState();
         }
-        else {
-            // std::cout << ">Failed state: " << current_state << std::endl;
-        }
-        
     }
 }
 
@@ -86,9 +79,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
         sc2::Units bases = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
         for (const auto& base : bases) {
             if (base->build_progress == 1) {
-                if (bot.building_manager.TryBuildGas(bot, sc2::ABILITY_ID::BUILD_EXTRACTOR, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos)) {
-                    // ++extractor_count;
-                }
+                bot.building_manager.TryBuildGas(bot, sc2::ABILITY_ID::BUILD_EXTRACTOR, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
                 // only want to build one extractor right now, once we find the completed hatchery stop checking
                 break;
             }
@@ -133,47 +124,6 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
 }
-
-
-
-// // BUILD_FIRST_DRONE, BUILD_SECOND_DRONE, BUILD_THIRD_DRONE etc.
-// void StateMachineManager::BuildDrone(BasicSc2Bot& bot) {
-
-//     if (bot.unit_manager.BuildDrone(bot)) {
-//         // State is complete
-//         std::cout << ">Completed state: " << current_state << std::endl;
-//         completeState();
-//     }
-
-// }
-
-// // BUILD_FIRST_OVERLORD
-// void StateMachineManager::BuildOverlord(BasicSc2Bot& bot) {
-
-//     if (bot.unit_manager.BuildOverlord(bot)) {
-//         // State is complete
-//         std::cout << ">Completed state: " << current_state << std::endl;
-//         completeState();
-//     }
-// }
-
-// // FIRST_EXPAND
-// void StateMachineManager::FirstExpand(BasicSc2Bot& bot) {
-
-//     if (bot.observation->GetMinerals() > 300) {
-
-//         if (bot.building_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
-
-//             // State is complete
-//             std::cout << ">Completed state: " << current_state << std::endl;
-//             completeState();
-//         }
-//         else {
-//             std::cout << ">Failed state: " << current_state << std::endl;
-//         }
-        
-//     }
-// }
 
 // // WAIT_FOR_HATCHERY
 // void StateMachineManager::WaitForHatchery(BasicSc2Bot& bot) {

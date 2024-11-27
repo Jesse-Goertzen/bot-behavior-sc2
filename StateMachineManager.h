@@ -29,16 +29,6 @@ public:
         POST_FIRST_EXPANSION,
         QUEENING,
 
-
-
-        // BUILD_FIRST_DRONE,
-        // BUILD_FIRST_OVERLORD,
-        // BUILD_SECOND_DRONE,
-        // BUILD_THIRD_DRONE,
-        // BUILD_FOURTH_DRONE,
-        // FIRST_EXPAND,
-        // WAIT_FOR_HATCHERY,
-        // IDLE
 	};
 
     void StartingState(BasicSc2Bot& bot);
