@@ -15,7 +15,10 @@ void StateMachineManager::StartingState(BasicSc2Bot& bot) {
     const size_t DRONE_TARGET = 13;
 
     // build one drone
-    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE) < DRONE_TARGET) {
+    size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    drone_count += bot.unit_manager.CountDroneEggs(bot);
+
+    if (drone_count < DRONE_TARGET) {
         bot.unit_manager.BuildDrone(bot);
     }
 
@@ -31,13 +34,12 @@ void StateMachineManager::PreFirstExpansionState(BasicSc2Bot& bot) {
     const size_t MINERAL_TARGET = 250; // play with this number, or maybe calculate it based off of how far away the expansion spot will be
 
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    drone_count += bot.unit_manager.CountDroneEggs(bot);
     if (drone_count < DRONE_TARGET) {
-        if (bot.unit_manager.BuildDrone(bot)) {
-            ++drone_count;
-        }
+        bot.unit_manager.BuildDrone(bot);
     }
 
-    if (drone_count == DRONE_TARGET && bot.observation->GetMinerals() >= MINERAL_TARGET) {
+    if (drone_count >= DRONE_TARGET && bot.observation->GetMinerals() >= MINERAL_TARGET) {
         completeState();
     }
 }
@@ -46,7 +48,7 @@ void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
     // step 4
     if (bot.observation->GetMinerals() > 300) {
 
-        if (bot.building_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
+        if (bot.unit_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
             completeState();
         }
     }
@@ -58,10 +60,11 @@ void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
 //          - build an extractor
 //          - build a spawning pool
 void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
-    const size_t DRONE_TARGET = 25; // max the first hatchery, and the new extractor
+    const size_t DRONE_TARGET = 19; // max the first hatchery, and the new extractor
     const size_t EXTRACTOR_TARGET = 1;
     const size_t SPAWN_POOL_TARGET = 1;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    drone_count += bot.unit_manager.CountDroneEggs(bot);
     size_t extractor_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
     size_t spawn_pool_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL);
 
@@ -71,7 +74,6 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     // ensure we are worker capped on the one hatchery, in this state our second hatchery shouldn't have finished building yet
     if (drone_count < DRONE_TARGET) {
         bot.unit_manager.BuildDrone(bot);
-        // ++drone_count;
     }
     
     // build an extractor if we havent started building one yet
@@ -79,7 +81,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
         sc2::Units bases = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
         for (const auto& base : bases) {
             if (base->build_progress == 1) {
-                bot.building_manager.TryBuildGas(bot, sc2::ABILITY_ID::BUILD_EXTRACTOR, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
+                bot.unit_manager.TryBuildGas(bot, sc2::ABILITY_ID::BUILD_EXTRACTOR, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
                 // only want to build one extractor right now, once we find the completed hatchery stop checking
                 break;
             }
@@ -87,19 +89,14 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     }
 
     if (spawn_pool_count < 1 && bot.observation->GetMinerals() > 200) {
-        if (bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation())) {
-            // ++spawn_pool_count;
-        }
+        bot.unit_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation());
     }
 
-    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE) > 19) {
-        bot.unit_manager.HandleDrones(bot);
-    }
-    // bot.unit_manager.SaturateExtractors(bot);
+    bot.unit_manager.HandleDrones(bot);
     
-    // if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
-        // completeState();
-    // }
+    if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
+        completeState();
+    }
 }
 
 // steps: 8, 9, 10
@@ -111,6 +108,7 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
 
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
+    bot.unit_manager.HandleDrones(bot);
 
 }
 

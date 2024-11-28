@@ -71,14 +71,10 @@ void BasicSc2Bot::OnBuildingConstructionComplete(const sc2::Unit* unit) {
     if (unit->alliance != sc2::Unit::Alliance::Self) return;
 
     if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY) {
-        printf("base unit created\n");
         unit_manager.bases.push_back({unit->tag, true});
     }
 
     if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR) {
-        printf("extractor created\n");
         unit_manager.extractors.push_back({unit->tag, true});
     }
-
-    // printf("finished on unit created function\n");
 }
