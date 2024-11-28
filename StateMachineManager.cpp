@@ -92,22 +92,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
         }
     }
 
-    // gross but hopefully works? lmao
-    if (bot.unit_manager.extractors.size() > 0) {
-        for (const auto& hatchery : bot.unit_manager.hatcheries) {
-            if (hatchery->build_progress == 1 && hatchery->assigned_harvesters > hatchery->ideal_harvesters) {
-                int excess_drones = hatchery->assigned_harvesters - hatchery->ideal_harvesters;
-                for (const auto& drone : bot.unit_manager.drones) {
-                    if (drone->orders.front().target_unit_tag == hatchery->tag) {
-                        bot.actions->UnitCommand(drone, sc2::ABILITY_ID::HARVEST_GATHER_DRONE, bot.unit_manager.extractors.front());
-                        --excess_drones;
-                        if (excess_drones == 0) break;
-                    }
-                }
-                break;
-            }
-        }
-    }
+    bot.unit_manager.HandleDrones(bot);
     
     if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
         completeState();
@@ -123,7 +108,7 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
 
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
-    
+
 }
 
 
@@ -156,7 +141,7 @@ void StateMachineManager::BaseDefenseState(BasicSc2Bot& bot) {
     if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPORECRAWLER) < SPORE_CRAWLER_TARGET) {
         // could be an issue if building the spore crawlers fails for some reason, would have to check where to build
         // if we want one at each hatchery
-        for (const auto& hatchery : bot.unit_manager.hatcheries) {
+        for (const auto& hatchery : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_HATCHERY))) {
             bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPORECRAWLER, sc2::UNIT_TYPEID::ZERG_DRONE, hatchery->pos);
         }
     }

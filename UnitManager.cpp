@@ -5,7 +5,13 @@
 #include "BasicSc2Bot.h"
 #include "utility.h"
 
-// #include "sc2_unit_filters.h"
+void UnitManager::OnGameStart(BasicSc2Bot& bot) {
+    // get all hatcheries, should be just one. Need to store its tag
+    sc2::Units hatcheries = bot.Observation()->GetUnits(sc2::Unit::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_HATCHERY));
+    // store the starting hatchery's tag, and enable workers for the base
+    bases.push_back({hatcheries.front()->tag, true});
+}
+
 
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L158
 // Count the types of the passed unit
@@ -28,8 +34,6 @@ size_t UnitManager::CountUnitType(BasicSc2Bot& bot, sc2::UnitTypeID unit_type) {
     return bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type)).size();
 }
 
-
-
 bool UnitManager::BuildDrone(BasicSc2Bot& bot) {
 
     if (bot.observation->GetMinerals() < 50) {
@@ -48,7 +52,8 @@ bool UnitManager::BuildDrone(BasicSc2Bot& bot) {
     }
 
     // Attempt to build
-    bot.actions->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_DRONE);
+    const sc2::Unit* larva = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_LARVA)).front();
+    bot.actions->UnitCommand(larva, sc2::ABILITY_ID::TRAIN_DRONE);
 
     return true;
 }
@@ -67,7 +72,8 @@ bool UnitManager::BuildOverlord(BasicSc2Bot& bot) {
 
     // spawn an overlord when appropriate, if we are well below our food cap, no need to spawn an overlord
     if (bot.observation->GetFoodUsed() >= bot.observation->GetFoodCap() - 4) {
-        bot.actions->UnitCommand(larva.front(), sc2::ABILITY_ID::TRAIN_OVERLORD);
+        const sc2::Unit* larva = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_LARVA)).front();
+        bot.actions->UnitCommand(larva, sc2::ABILITY_ID::TRAIN_OVERLORD);
         return true;
     }
 
@@ -78,43 +84,344 @@ bool UnitManager::BuildOverlord(BasicSc2Bot& bot) {
 void UnitManager::UpdateUnits(BasicSc2Bot& bot) {
 
     // Update the larva vector
-    larva = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
-    });
+    // larva = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
+    // });
 
-    // Update the drones vector
-    drones = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
-    });
+    // // Update the drones vector
+    // drones = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
+    // });
 
-    // Update overlords
-    overlords = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_OVERLORD;
-    });
+    // // Update overlords
+    // overlords = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_OVERLORD;
+    // });
 
-    hatcheries = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY;
-    });
+    // hatcheries = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY;
+    // });
 
-    queens = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_QUEEN;
-    });
+    // queens = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_QUEEN;
+    // });
 
-    roaches = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_ROACH;
-    });
+    // roaches = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_ROACH;
+    // });
     
-    zerglings = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_ZERGLING;
-    });
+    // zerglings = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_ZERGLING;
+    // });
 
-    extractors = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR;
-    });
+    // extractors = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR;
+    // });
     
 }
 
+void UnitManager::HandleDrones(BasicSc2Bot& bot) {
+    sc2::Units all_drones = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_DRONE));
+    sc2::Units available_drones = {};
 
-void HandleQueenLarvae(BasicSc2Bot& bot) {
+    // check current bases for any excess drones, either above the cap or if they are disbled
+    for (const auto& base : bases) {
+        const sc2::Unit* base_unit = bot.Observation()->GetUnit(base.first);
+        // if base is not enabled for workers
+        if (!base.second && base_unit->assigned_harvesters > 0) {
+            // all drones at a disabled base are free to be reassigned
+            for (const auto& drone : all_drones) {
+                if (drone->orders.front().target_unit_tag == base.first) {
+                    available_drones.push_back(drone);
+                }
+            }
+            continue;
+        }
+
+        if (base_unit->build_progress < 1) {
+            // dont check in progess bases
+            continue;
+        }
+
+        // all drones above the ideal for a base are free to be reassigned
+        if (base_unit->assigned_harvesters > base_unit->ideal_harvesters) {
+            int excess_drones = base_unit->assigned_harvesters - base_unit->ideal_harvesters;
+            for (const auto& drone : all_drones) {
+                if (drone->orders.front().target_unit_tag == base_unit->tag) {
+                    available_drones.push_back(drone);
+                    --excess_drones;
+                    if (excess_drones == 0) break;
+                }
+            }
+        }
+    }
+
+    // check the extractors for any excess drones, either above the cap or if they are disabled
+    for (const auto& extractor : extractors) {
+        const sc2::Unit *extractor_unit = bot.Observation()->GetUnit(extractor.first);
+        // any disabled for havest extractors can have their drones reassigned
+        if (!extractor.second && extractor_unit->assigned_harvesters > 0) {
+            for (const auto& drone : all_drones) {
+                if (drone->orders.front().target_unit_tag == extractor_unit->tag) {
+                    available_drones.push_back(drone);
+                }
+            }
+            continue;
+        }
+
+        // dont need to check building in progress extractors
+        if (extractor_unit->build_progress < 1) {
+            continue;
+        }
+
+        // all drones above the ideal are free to be reassigned
+        if (extractor_unit->assigned_harvesters > extractor_unit->ideal_harvesters) {
+            int excess_drones = extractor_unit->assigned_harvesters - extractor_unit->ideal_harvesters;
+            for (const auto& drone : all_drones) {
+                if (drone->orders.front().target_unit_tag == extractor_unit->tag) {
+                    available_drones.push_back(drone);
+                    --excess_drones;
+                    if (excess_drones == 0) break;
+                }
+            }
+        }
+    }
+
+    for (const auto& base : bases) {
+        const sc2::Unit* base_unit = bot.Observation()->GetUnit(base.first);
+        // if the base is disabled        
+        if (!base.second) continue; 
+        // base saturated, all is good
+        if (base_unit->assigned_harvesters == base_unit->ideal_harvesters) continue;
+        int harvester_deficit = base_unit->ideal_harvesters - base_unit->assigned_harvesters;
+        while (harvester_deficit > 0) {
+            if (available_drones.empty()) break;
+            const sc2::Unit* drone = available_drones.back();
+            available_drones.pop_back();
+
+            bot.Actions()->UnitCommand(drone, sc2::ABILITY_ID::HARVEST_GATHER_DRONE, base_unit);
+            --harvester_deficit;
+        }
+    }
+
+    for (const auto& extractor : extractors) {
+        const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
+        // extractor disabled
+        if (!extractor.second) continue; 
+        // extractor is saturated already
+        if (extractor_unit->assigned_harvesters == extractor_unit->ideal_harvesters) continue;
+
+        int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
+        while (harvester_deficit > 0) {
+            if (available_drones.empty()) break;
+            const sc2::Unit* drone = available_drones.back();
+            available_drones.pop_back();
+
+            bot.Actions()->UnitCommand(drone, sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
+        }
+    }
+}
+
+
+void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
+    size_t drone_count = CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    size_t extractor_count = CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
+    size_t base_count = CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_HATCHERY) + CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LAIR);
+
+    sc2::Units drones = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_DRONE));
+
+    if (drone_count >= (base_count * 16 + extractor_count * 3)) {
+        // enough for everyone, let the drone handler handle it
+        HandleDrones(bot);
+        return;
+    }
+
+    if (drone_count < extractor_count * 3) {
+        // not enough drones for all extractors, not sure what to do?
+        return;
+    }
+
+    size_t drones_for_bases = drone_count - extractor_count * 3;
+    size_t drone_ind = drone_count; 
+    // assign drones to extractors
+    for (auto& extractor : extractors) {
+        extractor.second = true;
+        const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
+        if (extractor_unit->build_progress < 1) continue;
+        for (int i = 0; i < 3; ++i) {
+            bot.Actions()->UnitCommand(drones[drone_ind], sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
+        }
+    }
+
+    // loop through remaining drones and assign to each base round robin
+    for (drone_ind; drone_ind >= 0; --drone_ind) {
+        const sc2::Unit* base_unit = bot.Observation()->GetUnit(bases[drone_ind % base_count].first);
+        bot.Actions()->UnitCommand(drones[drone_ind], sc2::ABILITY_ID::HARVEST_GATHER_DRONE, base_unit);
+    }
+} 
+
+void UnitManager::HandleQueenLarvae(BasicSc2Bot& bot) {
     // todo
+}
+
+// Attempt to build a structure on creep from a random location on the creep
+// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L1363
+bool UnitManager::TryBuildOnCreep(BasicSc2Bot& bot, 
+    sc2::AbilityID ability_type_for_structure, 
+    sc2::UnitTypeID unit_type, 
+    sc2::Point2D loc) 
+{
+    float rx = sc2::GetRandomScalar();
+    float ry = sc2::GetRandomScalar();
+    sc2::Point2D build_location = sc2::Point2D(loc.x + rx * 15, loc.y + ry * 15);
+
+    if (bot.observation->HasCreep(build_location)) {
+        return TryBuildStructure(bot, ability_type_for_structure, unit_type, build_location, false);
+    }
+    return false;
+}
+
+// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L390
+// Expands to nearest location and updates the start location to be between the new location and old bases.
+bool UnitManager::TryExpand(BasicSc2Bot& bot, sc2::AbilityID build_ability, sc2::UnitTypeID worker_type) {
+    float minimum_distance = std::numeric_limits<float>::max();
+    sc2::Point3D closest_expansion;
+    for (const auto& expansion : bot.GetExpansions()) {
+        float current_distance = sc2::Distance2D(bot.GetStartLocation(), expansion);
+        if (current_distance < .01f) {
+            continue;
+        }
+
+        if (current_distance < minimum_distance) {
+            if (bot.query->Placement(build_ability, expansion)) {
+                closest_expansion = expansion;
+                minimum_distance = current_distance;
+            }
+        }
+    }
+    //only update staging location up till 3 bases.
+    if (TryBuildStructure(bot, build_ability, worker_type, closest_expansion, true) && bot.observation->GetUnits(sc2::Unit::Self, IsTownHall()).size() < 4) {
+        bot.GetStagingLocation() = sc2::Point3D(((bot.GetStagingLocation().x + closest_expansion.x) / 2), ((bot.GetStagingLocation().y + closest_expansion.y) / 2),
+            ((bot.GetStagingLocation().z + closest_expansion.z) / 2));
+        return true;
+    }
+    return false;
+
+}
+
+// Attempt to build structure. Return if it fails or not
+// https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L316C1-L356C2
+bool UnitManager::TryBuildStructure(
+        BasicSc2Bot& bot, 
+        sc2::AbilityID ability_type_for_structure, 
+        sc2::UnitTypeID unit_type, 
+        sc2::Point2D location, 
+        bool isExpansion = false
+    ) 
+{
+    sc2::Units workers = bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
+
+    // If we have no workers Don't build
+    if (workers.empty()) {
+        return false;
+    }
+
+    // Check to see if there is already a worker heading out to build it
+    for (const auto& worker : workers) {
+        for (const auto& order : worker->orders) {
+            if (order.ability_id == ability_type_for_structure) {
+                return false;
+            }
+        }   
+    }
+
+    // If no worker is already building one, get a random worker to build one
+    const sc2::Unit* unit = GetRandomEntry(workers);
+
+    // Check to see if unit can make it there
+    if (bot.query->PathingDistance(unit, location) < 0.1f) {
+        return false;
+    }
+
+    if (!isExpansion) {
+        for (const auto& expansion : bot.GetExpansions()) {
+            if (Distance2D(location, sc2::Point2D(expansion.x, expansion.y)) < 7) {
+                return false;
+            }
+        }
+    }
+
+    // Check to see if unit can build there
+    if (bot.query->Placement(ability_type_for_structure, location)) {
+        bot.actions->UnitCommand(unit, ability_type_for_structure, location);
+        return true;
+    }
+    return false;
+}
+
+// https://github.com/Blizzard/s2client-api/blob/master/examples/common/bot_examples.cc#L359
+//Try to build a structure based on tag, Used mostly for Vespene, since the pathing check will fail even though the geyser is "Pathable"
+bool UnitManager::TryBuildStructure(
+        BasicSc2Bot& bot, 
+        sc2::AbilityID ability_type_for_structure, 
+        sc2::UnitTypeID unit_type, 
+        sc2::Tag location_tag
+    ) 
+{
+    sc2::Units workers = bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
+    const sc2::Unit* target = bot.observation->GetUnit(location_tag);
+
+    if (workers.empty()) {
+        return false;
+    }
+
+    // Check to see if there is already a worker heading out to build it
+    for (const auto& worker : workers) {
+        for (const auto& order : worker->orders) {
+            if (order.ability_id == ability_type_for_structure) {
+                return false;
+            }
+        }
+    }
+
+    // If no worker is already building one, get a random worker to build one
+    const sc2::Unit* unit = GetRandomEntry(workers);
+
+    // Check to see if unit can build there
+    if (bot.query->Placement(ability_type_for_structure, target->pos)) {
+        bot.actions->UnitCommand(unit, ability_type_for_structure, target);
+        return true;
+    }
+    return false;
+
+}
+
+bool UnitManager::TryBuildGas(
+        BasicSc2Bot& bot, 
+        sc2::AbilityID build_ability, 
+        sc2::UnitTypeID worker_type, 
+        sc2::Point2D base_location
+    ) 
+{
+    sc2::Units geysers = bot.observation->GetUnits(sc2::Unit::Alliance::Neutral, IsVespeneGeyser());
+
+    //only search within this radius
+    float minimum_distance = 15.0f;
+    sc2::Tag closestGeyser = 0;
+    for (const auto& geyser : geysers) {
+        float current_distance = Distance2D(base_location, geyser->pos);
+        if (current_distance < minimum_distance) {
+            if (bot.query->Placement(build_ability, geyser->pos)) {
+                minimum_distance = current_distance;
+                closestGeyser = geyser->tag;
+            }
+        }
+    }
+
+    // In the case where there are no more available geysers nearby
+    if (closestGeyser == 0) {
+        return false;
+    }
+    return TryBuildStructure(bot, build_ability, worker_type, closestGeyser);
+
 }

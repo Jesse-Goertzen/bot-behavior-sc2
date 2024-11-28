@@ -63,3 +63,13 @@ void BasicSc2Bot::OnStep() {
             state_machine.QueeningState(*this);
     }
 }
+
+void BasicSc2Bot::OnUnitCreated(const sc2::Unit* unit) {
+    if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY) {
+        unit_manager.bases.push_back({unit->tag, true});
+    }
+
+    if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR) {
+        unit_manager.extractors.push_back({unit->tag, true});
+    }
+}
