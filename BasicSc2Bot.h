@@ -10,7 +10,7 @@ public:
 
 	virtual void OnGameStart();
 	virtual void OnStep();
-	virtual void OnUnitCreated(const sc2::Unit* unit);
+	virtual void OnBuildingConstructionComplete(const sc2::Unit* unit);
 
 	void HandleDrones();
 

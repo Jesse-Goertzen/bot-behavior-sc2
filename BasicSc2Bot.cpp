@@ -29,6 +29,8 @@ void BasicSc2Bot::OnGameStart() {
     startLocation_ = observation->GetStartLocation();
     staging_location_ = startLocation_;
 
+    unit_manager.OnGameStart(*this);
+
 }
 
 void BasicSc2Bot::OnStep() {
@@ -39,37 +41,44 @@ void BasicSc2Bot::OnStep() {
     switch (state_machine.current_state) {
         
         case StateMachineManager::START:
-            std::cout << "Starting State" << std::endl;
+            // std::cout << "Starting State" << std::endl;
             state_machine.StartingState(*this);
             break;
 
         case StateMachineManager::PRE_FIRST_EXPANSION:
-            std::cout << "Pre Expansion State" << std::endl;
+            // std::cout << "Pre Expansion State" << std::endl;
             state_machine.PreFirstExpansionState(*this);
             break;
 
         case StateMachineManager::FIRST_EXPANSION:
-            std::cout << "Expansion State" << std::endl;
+            // std::cout << "Expansion State" << std::endl;
             state_machine.FirstExpansionState(*this);
             break;
 
         case StateMachineManager::POST_FIRST_EXPANSION:
-            std::cout << "Post Expansion State" << std::endl;
+            // std::cout << "Post Expansion State" << std::endl;
             state_machine.PostFirstExpansionState(*this);
             break;
 
         case StateMachineManager::QUEENING:
-            std::cout << "Queen State" << std::endl;
+            // std::cout << "Queen State" << std::endl;
             state_machine.QueeningState(*this);
+            break;
     }
 }
 
-void BasicSc2Bot::OnUnitCreated(const sc2::Unit* unit) {
+void BasicSc2Bot::OnBuildingConstructionComplete(const sc2::Unit* unit) {
+    if (unit->alliance != sc2::Unit::Alliance::Self) return;
+
     if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY) {
+        printf("base unit created\n");
         unit_manager.bases.push_back({unit->tag, true});
     }
 
     if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR) {
+        printf("extractor created\n");
         unit_manager.extractors.push_back({unit->tag, true});
     }
+
+    // printf("finished on unit created function\n");
 }

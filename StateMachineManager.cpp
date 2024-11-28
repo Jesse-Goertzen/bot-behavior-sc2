@@ -58,7 +58,7 @@ void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
 //          - build an extractor
 //          - build a spawning pool
 void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
-    const size_t DRONE_TARGET = 19; // max the first hatchery, and the new extractor
+    const size_t DRONE_TARGET = 25; // max the first hatchery, and the new extractor
     const size_t EXTRACTOR_TARGET = 1;
     const size_t SPAWN_POOL_TARGET = 1;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
@@ -92,11 +92,14 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
         }
     }
 
-    bot.unit_manager.HandleDrones(bot);
-    
-    if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
-        completeState();
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE) > 19) {
+        bot.unit_manager.HandleDrones(bot);
     }
+    // bot.unit_manager.SaturateExtractors(bot);
+    
+    // if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
+        // completeState();
+    // }
 }
 
 // steps: 8, 9, 10

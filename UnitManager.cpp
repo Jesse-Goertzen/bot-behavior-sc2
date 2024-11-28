@@ -127,6 +127,10 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
     // check current bases for any excess drones, either above the cap or if they are disbled
     for (const auto& base : bases) {
         const sc2::Unit* base_unit = bot.Observation()->GetUnit(base.first);
+        if (base_unit->build_progress < 1) {
+            // dont check in progess bases
+            continue;
+        }
         // if base is not enabled for workers
         if (!base.second && base_unit->assigned_harvesters > 0) {
             // all drones at a disabled base are free to be reassigned
@@ -138,10 +142,6 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
             continue;
         }
 
-        if (base_unit->build_progress < 1) {
-            // dont check in progess bases
-            continue;
-        }
 
         // all drones above the ideal for a base are free to be reassigned
         if (base_unit->assigned_harvesters > base_unit->ideal_harvesters) {
@@ -195,11 +195,12 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
         if (base_unit->assigned_harvesters == base_unit->ideal_harvesters) continue;
         int harvester_deficit = base_unit->ideal_harvesters - base_unit->assigned_harvesters;
         while (harvester_deficit > 0) {
+            // printf("harvester deficit %d\n", harvester_deficit);
             if (available_drones.empty()) break;
             const sc2::Unit* drone = available_drones.back();
             available_drones.pop_back();
-
-            bot.Actions()->UnitCommand(drone, sc2::ABILITY_ID::HARVEST_GATHER_DRONE, base_unit);
+            const sc2::Unit* nearest_minerals = FindNearestMineralPatch(bot, base_unit->pos);
+            bot.Actions()->UnitCommand(drone, sc2::ABILITY_ID::HARVEST_GATHER_DRONE, nearest_minerals);
             --harvester_deficit;
         }
     }
@@ -424,4 +425,25 @@ bool UnitManager::TryBuildGas(
     }
     return TryBuildStructure(bot, build_ability, worker_type, closestGeyser);
 
+}
+
+// https://github.com/Blizzard/s2client-api/blob/master/examples/common/bot_examples.cc#L202
+const sc2::Unit* UnitManager::FindNearestMineralPatch(BasicSc2Bot&bot, const sc2::Point2D& start) {
+    sc2::Units units = bot.Observation()->GetUnits(sc2::Unit::Alliance::Neutral);
+    float distance = std::numeric_limits<float>::max();
+    const sc2::Unit* target = nullptr;
+    for (const auto& u : units) {
+        if (u->unit_type == sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD) {
+            float d = DistanceSquared2D(u->pos, start);
+            if (d < distance) {
+                distance = d;
+                target = u;
+            }
+        }
+    }
+    //If we never found one return false;
+    if (distance == std::numeric_limits<float>::max()) {
+        return target;
+    }
+    return target;
 }
