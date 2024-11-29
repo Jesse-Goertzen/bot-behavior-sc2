@@ -20,12 +20,26 @@ size_t UnitManager::CountUnitType(BasicSc2Bot& bot, sc2::UnitTypeID unit_type) {
 }
 
 // Count the eggs that are training drones
-size_t UnitManager::CountDroneEggs(BasicSc2Bot& bot) {
+// size_t UnitManager::CountDroneEggs(BasicSc2Bot& bot) {
+//     size_t egg_count = 0;
+//     sc2::Units eggs = bot.observation->GetUnits(sc2::Unit::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_EGG));
+//     for (const auto& egg : eggs) {
+//         if (!egg->orders.empty()) {
+//             if (egg->orders.front().ability_id == sc2::ABILITY_ID::TRAIN_DRONE) {
+//                 egg_count++;
+//             }
+//         }
+//     }
+//     return egg_count;
+// }
+
+// Count the eggs that are training that unit
+size_t UnitManager::CountUnitEggs(BasicSc2Bot& bot, sc2::ABILITY_ID ability) {
     size_t egg_count = 0;
     sc2::Units eggs = bot.observation->GetUnits(sc2::Unit::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_EGG));
     for (const auto& egg : eggs) {
         if (!egg->orders.empty()) {
-            if (egg->orders.front().ability_id == sc2::ABILITY_ID::TRAIN_DRONE) {
+            if (egg->orders.front().ability_id == ability) {
                 egg_count++;
             }
         }

@@ -11,7 +11,8 @@ public:
 
     // Return count of the unit type passed
     size_t CountUnitType(BasicSc2Bot& bot, sc2::UnitTypeID unit_type);
-    size_t CountDroneEggs(BasicSc2Bot& bot);
+    // size_t CountDroneEggs(BasicSc2Bot& bot);
+    size_t CountUnitEggs(BasicSc2Bot& bot, sc2::ABILITY_ID ability);
 
     // Build a drone unit
     bool BuildDrone(BasicSc2Bot& bot);
