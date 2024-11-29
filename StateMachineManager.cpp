@@ -107,10 +107,29 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     const size_t QUEEN_TARGET = 2;
     const size_t ZERGLING_TARGET = 4; // maybe 0? lol
     const size_t DRONE_TARGET = 41; // wont hit, but basically make as many as possible
+    size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    size_t queen_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_QUEEN);
 
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
+    
+    if (drone_count < DRONE_TARGET) {
+        bot.unit_manager.BuildDrone(bot);
+    }
+
+    if (queen_count < QUEEN_TARGET) {
+        bot.unit_manager.BuildQueen(bot);
+    }
+
+    std::cout << queen_count << std::endl;
+
+
+    
+
+    
     bot.unit_manager.HandleDrones(bot);
+
+
 
 }
 

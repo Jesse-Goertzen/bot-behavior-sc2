@@ -18,6 +18,9 @@ public:
 
     // Build an overlord unit
     bool BuildOverlord(BasicSc2Bot& bot);
+
+    // Build a queen unit
+    bool BuildQueen(BasicSc2Bot& bot);
     
     bool TryBuildOnCreep(BasicSc2Bot& bot, sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Point2D loc);
 
@@ -51,7 +54,7 @@ public:
     // sc2::Units extractors;
 private:
     const sc2::Unit* FindNearestMineralPatch(BasicSc2Bot& bot, const sc2::Point2D& start);
-    void UnitManager::MineIdleWorkers(BasicSc2Bot& bot, const sc2::Unit* worker, sc2::AbilityID worker_gather_command, sc2::UnitTypeID vespene_building_type);
+    //void UnitManager::MineIdleWorkers(BasicSc2Bot& bot, const sc2::Unit* worker, sc2::AbilityID worker_gather_command, sc2::UnitTypeID vespene_building_type);
 };
 
 #endif

@@ -78,6 +78,40 @@ bool UnitManager::BuildOverlord(BasicSc2Bot& bot) {
     return false;
 }
 
+bool UnitManager::BuildQueen(BasicSc2Bot& bot) { 
+    // ensure sufficient minerals
+    if (bot.Observation()->GetMinerals() < 150) {
+        return false; 
+    }
+
+    // ensure there is atleast 1 spawning pool
+    if (bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) { return unit.unit_type == sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL; }).empty()) {
+        return false; 
+    }
+
+    const sc2::Unit* hatchery = nullptr;
+    for (const auto& base : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+        return (unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
+                unit.unit_type == sc2::UNIT_TYPEID::ZERG_LAIR ||
+                unit.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE) &&
+                unit.orders.empty(); // no current orders
+    })) {
+        hatchery = base;
+        break; // use first hatchery available
+    }
+
+    // ensure hatchery was set / available
+    if (!hatchery) {
+        return false;
+    }
+
+    // attempt to build queen
+    bot.Actions()->UnitCommand(hatchery, sc2::ABILITY_ID::TRAIN_QUEEN);
+    std::cout << "Queen spawned" << std::endl;
+    return true;
+}
+
+
 // Update the vectors of the units we have avalible
 void UnitManager::UpdateUnits(BasicSc2Bot& bot) {
 
@@ -118,7 +152,7 @@ void UnitManager::UpdateUnits(BasicSc2Bot& bot) {
     
 }
 
-// Assigns any excess drones to ones that are under cap
+// Assigns any excess drones to bases that are under cap
 void UnitManager::HandleDrones(BasicSc2Bot& bot) {
     sc2::Units all_drones = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_DRONE));
     sc2::Units available_drones = {};
@@ -222,6 +256,7 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
             --harvester_deficit;
         }
     }
+    std::cout << "finish" << std::endl;
 
 }
 
