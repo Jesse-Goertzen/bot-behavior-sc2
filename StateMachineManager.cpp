@@ -110,6 +110,7 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
     drone_count += bot.unit_manager.CountDroneEggs(bot);
     size_t queen_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_QUEEN);
+    size_t zergling_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ZERGLING);
 
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
@@ -121,6 +122,12 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     if (queen_count < QUEEN_TARGET) {
         bot.unit_manager.BuildQueen(bot);
     }
+
+    if (zergling_count < ZERGLING_TARGET) {
+        bot.unit_manager.BuildZergling(bot);
+    }
+
+    std::cout << zergling_count << std::endl;
 
     // Attempt to inject larva for each queen
     // Plan is to run inject every 29 seconds, but if we just continiously try to inject, it will fail because its already injecting

@@ -19,6 +19,7 @@ size_t UnitManager::CountUnitType(BasicSc2Bot& bot, sc2::UnitTypeID unit_type) {
     return bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type)).size();
 }
 
+// Count the eggs that are training drones
 size_t UnitManager::CountDroneEggs(BasicSc2Bot& bot) {
     size_t egg_count = 0;
     sc2::Units eggs = bot.observation->GetUnits(sc2::Unit::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_EGG));
@@ -113,11 +114,21 @@ bool UnitManager::BuildQueen(BasicSc2Bot& bot) {
     return true;
 }
 
-// Make a zergling. Pre much copy of queen function as both need spawning pool but less minerals
+// Make a zergling. Pre much copy of queen function as both need spawning pool but less minerals. Also need to use a larva tho
 bool UnitManager::BuildZergling(BasicSc2Bot& bot) { 
     // ensure sufficient minerals
     if (bot.Observation()->GetMinerals() < 50) {
         return false; 
+    }
+
+    if (CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA) == 0) {
+        // std::cout << "Not enough larva to train drone!" << std::endl;
+        return false;
+    }
+
+    if (getAvailableSupply(bot) < 1) {
+        // std::cout << "Not enough supply to train drone!" << std::endl;
+        return false;
     }
 
     // ensure there is at least 1 spawning pool
@@ -141,8 +152,16 @@ bool UnitManager::BuildZergling(BasicSc2Bot& bot) {
         return false;
     }
 
+    // If we need, add something here that checks for the larva being selected as the one closest to var hatchery
+    // Worst case is a larva has to walk to the other base with spawning pool but thats not that big a deal
+
     // attempt to build zergling
-    bot.Actions()->UnitCommand(hatchery, sc2::ABILITY_ID::TRAIN_ZERGLING);
+    const sc2::Unit* larva = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_LARVA)).front();
+    if (!larva) {
+        // Larva killed
+        return false;
+    }
+    bot.Actions()->UnitCommand(larva, sc2::ABILITY_ID::TRAIN_ZERGLING);
     return true;
 }
 
