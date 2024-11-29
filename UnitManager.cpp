@@ -107,7 +107,6 @@ bool UnitManager::BuildQueen(BasicSc2Bot& bot) {
 
     // attempt to build queen
     bot.Actions()->UnitCommand(hatchery, sc2::ABILITY_ID::TRAIN_QUEEN);
-    std::cout << "Queen spawned" << std::endl;
     return true;
 }
 
@@ -336,7 +335,9 @@ void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
 } 
 
 void UnitManager::HandleQueenLarvae(BasicSc2Bot& bot) {
-    // todo
+
+
+
 }
 
 // Attempt to build a structure on creep from a random location on the creep
@@ -520,4 +521,35 @@ const sc2::Unit* UnitManager::FindNearestMineralPatch(BasicSc2Bot&bot, const sc2
         return target;
     }
     return target;
+}
+
+// Attempt to inject larva for all queens
+void UnitManager::TryInjectLarva(BasicSc2Bot&bot) {
+
+    const sc2::ObservationInterface* observation = bot.Observation();
+    sc2::Units queens = observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_QUEEN));
+    sc2::Units hatcheries = observation->GetUnits(sc2::Unit::Alliance::Self,IsTownHall());
+
+     // no queens or no hatcheries
+    if (queens.empty() || hatcheries.empty())
+        return;
+
+    for (size_t i = 0; i < queens.size(); ++i) {
+        for (size_t j = 0; j < hatcheries.size(); ++j) {
+
+            // hatchery isnt complete, so ignore it
+            if (hatcheries.at(j)->build_progress != 1) {
+                continue;
+            }
+            else {
+                if (i < queens.size()) {
+                    if (queens.at(i)->energy >= 25 && queens.at(i)->orders.empty()) {
+                        bot.Actions()->UnitCommand(queens.at(i), sc2::ABILITY_ID::EFFECT_INJECTLARVA, hatcheries.at(j));
+                        // std::cout << "Injected larva" << std::endl;
+                    }
+                    ++i;
+                }
+            }
+        }
+    }
 }

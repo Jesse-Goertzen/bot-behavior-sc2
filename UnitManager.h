@@ -21,6 +21,8 @@ public:
 
     // Build a queen unit
     bool BuildQueen(BasicSc2Bot& bot);
+
+    void TryInjectLarva(BasicSc2Bot&bot);
     
     bool TryBuildOnCreep(BasicSc2Bot& bot, sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type, sc2::Point2D loc);
 

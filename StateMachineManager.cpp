@@ -122,7 +122,10 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
         bot.unit_manager.BuildQueen(bot);
     }
 
-    // std::cout << queen_count << std::endl;
+    // Attempt to inject larva for each queen
+    // Plan is to run inject every 29 seconds, but if we just continiously try to inject, it will fail because its already injecting
+    // Therfore we dont need to account for 29 seconds and just always call in this function
+    bot.unit_manager.TryInjectLarva(bot);
 
 
     bot.unit_manager.HandleDrones(bot);
