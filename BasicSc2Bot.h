@@ -12,8 +12,6 @@ public:
 	virtual void OnStep();
 	virtual void OnBuildingConstructionComplete(const sc2::Unit* unit);
 
-	void HandleDrones();
-
 	// Each of our managers
 	StateMachineManager state_machine;
 	UnitManager unit_manager;

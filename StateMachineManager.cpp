@@ -78,7 +78,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     }
     
     // build an extractor if we havent started building one yet
-    if (extractor_count < 1 && bot.observation->GetMinerals() > 25) {
+    if (extractor_count < EXTRACTOR_TARGET && bot.observation->GetMinerals() > 25) {
         sc2::Units bases = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
         for (const auto& base : bases) {
             if (base->build_progress == 1) {
@@ -102,10 +102,9 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     }
 }
 
-// steps: 8, 9, 10
-// exit condition: enough gas for lair (100)
+// steps: 8, 9, 10, 11
+// exit condition: 36 supply
 void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
-    std::cout << "test" << std::endl;
     const size_t QUEEN_TARGET = 2;
     const size_t ZERGLING_TARGET = 2; // Changed to 2 since they are made in pairs
     // const size_t DRONE_TARGET = 42; // wont hit, but basically make as many as possible
@@ -154,21 +153,43 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
 
     bot.unit_manager.HandleDrones(bot);
 
-    std::cout << "Food used: " << supply_count << std::endl;
-
-    std::cout << "zergling_count: " << zergling_count << std::endl;
-
-    std::cout << "queen_count: " << queen_count << std::endl;
-
-    std::cout << "drone_count: " << drone_count << std::endl;
-
-    std::cout << "lair_count: " << lair_count << std::endl;
-
-
     // Took out drone target as a condition as we just want to produce as much as possible during this state
     // drone_count == DRONE_TARGET && 
     // Add 2 to the zergling target for final check since training 1 spawns 2
     if (zergling_count == (ZERGLING_TARGET + 2) && queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET && supply_count == SUPPLY_TARGET) {
+        std::cout << "Queen done" << std::endl;
+        completeState();
+    }
+
+}
+
+// step: 12
+// exit condition: drones assigned and two extractors built
+void StateMachineManager::MoreExtractingState(BasicSc2Bot& bot) { 
+    const size_t EXTRACTOR_TARGET = 3; // 2 + the one before
+    size_t extractor_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
+
+    // Build extractors
+    if (extractor_count < EXTRACTOR_TARGET && bot.observation->GetMinerals() > 25) {
+        sc2::Units bases = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
+        for (const auto& base : bases) {
+            std::cout << base->pos.x << " " << base->pos.y << std::endl;
+            // If base is destroyed dont build
+            if (!base) {
+                break;
+            }
+
+            if (base->build_progress == 1) {
+                // If it returns false, out of range for that base and we must loop to next one
+                if (bot.unit_manager.TryBuildGas(bot, sc2::ABILITY_ID::BUILD_EXTRACTOR, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos)) {
+                    break;
+                };
+                
+            }
+        }
+    }
+
+    if (extractor_count == EXTRACTOR_TARGET) {
         std::cout << "Done" << std::endl;
         completeState();
     }

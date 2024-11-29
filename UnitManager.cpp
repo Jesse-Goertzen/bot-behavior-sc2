@@ -481,8 +481,19 @@ bool UnitManager::TryBuildStructure(
         }   
     }
 
-    // If no worker is already building one, get a random worker to build one
-    const sc2::Unit* unit = GetRandomEntry(workers);
+    // Find an idle worker
+    const sc2::Unit* unit = nullptr;
+    for (const auto& worker : workers) {
+        if (worker->orders.empty()) {
+            unit = worker;
+            break;
+        }
+    }
+
+    // If no idle workers were found, select any worker
+    if (!unit) {
+        unit = GetRandomEntry(workers);
+    }
 
     // Check to see if unit can make it there
     if (bot.query->PathingDistance(unit, location) < 0.1f) {
@@ -530,8 +541,20 @@ bool UnitManager::TryBuildStructure(
         }
     }
 
-    // If no worker is already building one, get a random worker to build one
-    const sc2::Unit* unit = GetRandomEntry(workers);
+    // Find an idle worker
+    const sc2::Unit* unit = nullptr;
+    for (const auto& worker : workers) {
+        if (worker->orders.empty()) {
+            unit = worker;
+            break;
+        }
+    }
+
+    // If no idle workers were found, select any worker
+    if (!unit) {
+        std::cout << "NO WORKER FOUND" << std::endl;
+        unit = GetRandomEntry(workers);
+    }
 
     // Check to see if unit can build there
     if (bot.query->Placement(ability_type_for_structure, target->pos)) {
@@ -566,6 +589,7 @@ bool UnitManager::TryBuildGas(
 
     // In the case where there are no more available geysers nearby
     if (closestGeyser == 0) {
+        // std::cout << "No Geyser nearby" << std::endl;
         return false;
     }
     return TryBuildStructure(bot, build_ability, worker_type, closestGeyser);

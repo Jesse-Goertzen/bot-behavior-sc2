@@ -64,6 +64,11 @@ void BasicSc2Bot::OnStep() {
             // std::cout << "Queen State" << std::endl;
             state_machine.QueeningState(*this);
             break;
+
+        case StateMachineManager::MORE_EXTRACTING:
+            // std::cout << "More Extracting State" << std::endl;
+            state_machine.MoreExtractingState(*this);
+            break;
     }
 }
 
