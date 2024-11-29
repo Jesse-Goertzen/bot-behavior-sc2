@@ -112,10 +112,10 @@ bool UnitManager::BuildQueen(BasicSc2Bot& bot) {
         return (unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
                 unit.unit_type == sc2::UNIT_TYPEID::ZERG_LAIR ||
                 unit.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE) &&
-                unit.orders.empty(); // no current orders
+                unit.orders.empty();
     })) {
         hatchery = base;
-        break; // use first hatchery available
+        break;
     }
 
     // ensure hatchery was set / available
@@ -155,10 +155,10 @@ bool UnitManager::BuildZergling(BasicSc2Bot& bot) {
         return (unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
                 unit.unit_type == sc2::UNIT_TYPEID::ZERG_LAIR ||
                 unit.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE) &&
-                unit.orders.empty(); // no current orders
+                unit.orders.empty();
     })) {
         hatchery = base;
-        break; // use first hatchery available
+        break;
     }
 
     // ensure hatchery was set / available
@@ -359,6 +359,14 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
 
 }
 
+// Keep turning larva into roaches, but keep at least 1 larva 
+void UnitManager::HandleQueenLarvae(BasicSc2Bot& bot) {
+
+
+
+}
+
+
 
 void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
     size_t extractor_count = CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
@@ -401,12 +409,6 @@ void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
     //     bot.Actions()->UnitCommand(drones[drone_ind], sc2::ABILITY_ID::HARVEST_GATHER_DRONE, base_unit);
     // }
 } 
-
-void UnitManager::HandleQueenLarvae(BasicSc2Bot& bot) {
-
-
-
-}
 
 // Attempt to build a structure on creep from a random location on the creep
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L1363
@@ -620,4 +622,46 @@ void UnitManager::TryInjectLarva(BasicSc2Bot&bot) {
             }
         }
     }
+}
+
+// Change the given hatchery into lair
+bool UnitManager::TryMorphToLair(BasicSc2Bot& bot) {
+    const sc2::Unit* start_base = nullptr;
+    float closest_distance = std::numeric_limits<float>::max();
+
+    // Check mineral and gas
+    if (bot.Observation()->GetMinerals() < 150 || bot.Observation()->GetVespene() < 100) {
+        return false;
+    }
+
+    // Check for a spawning pool anywhere
+    if (bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+            return unit.unit_type == sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL;
+        }).empty()) {
+        return false; 
+    }
+    
+    // Get the base closest to the start location
+    for (const auto& base : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+            return unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY;
+        })) {
+        float distance = sc2::DistanceSquared2D(base->pos, bot.GetStartLocation());
+        if (distance < closest_distance) {
+            closest_distance = distance;
+            start_base = base;
+        }
+    }
+
+    if (!start_base) {
+        return false;
+    }
+
+    // Check if orders are empty
+    if (!start_base->orders.empty()) { 
+        return false;
+    }
+
+    // Morph the Hatchery into a Lair
+    bot.Actions()->UnitCommand(start_base, sc2::ABILITY_ID::MORPH_LAIR);
+    return true;
 }

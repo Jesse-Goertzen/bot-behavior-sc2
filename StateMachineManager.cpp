@@ -49,6 +49,7 @@ void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
     if (bot.observation->GetMinerals() > 300) {
 
         if (bot.unit_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
+            std::cout << "Expanded" << std::endl;
             completeState();
         }
     }
@@ -105,20 +106,20 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
 // exit condition: enough gas for lair (100)
 void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     const size_t QUEEN_TARGET = 2;
-    const size_t ZERGLING_TARGET = 4; // maybe 0? lol
-    const size_t DRONE_TARGET = 41; // wont hit, but basically make as many as possible
+    const size_t ZERGLING_TARGET = 2; // Changed to 2 since they are made in pairs
+    const size_t DRONE_TARGET = 42; // wont hit, but basically make as many as possible
+    const size_t LAIR_TARGET = 1;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
     drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
     size_t queen_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_QUEEN);
     size_t zergling_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ZERGLING);
     zergling_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_ZERGLING);
+    size_t lair_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LAIR); 
+
+    int gas_count = bot.observation->GetVespene();
 
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
-    
-    if (drone_count < DRONE_TARGET) {
-        bot.unit_manager.BuildDrone(bot);
-    }
 
     if (queen_count < QUEEN_TARGET) {
         bot.unit_manager.BuildQueen(bot);
@@ -128,17 +129,28 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
         bot.unit_manager.BuildZergling(bot);
     }
 
-    std::cout << zergling_count << std::endl;
+    // Moved drone function down here so we dont just go for drones first... We want to proritize the other two units first
+    if (drone_count < DRONE_TARGET) {
+        bot.unit_manager.BuildDrone(bot);
+    }
+
+    // Morph hatchery into lair
+    if (lair_count < LAIR_TARGET) {
+        bot.unit_manager.TryMorphToLair(bot);
+    }
 
     // Attempt to inject larva for each queen
     // Plan is to run inject every 29 seconds, but if we just continiously try to inject, it will fail because its already injecting
     // Therfore we dont need to account for 29 seconds and just always call in this function
     bot.unit_manager.TryInjectLarva(bot);
 
-
     bot.unit_manager.HandleDrones(bot);
 
-
+    // Took out drone target as a condition as we just want to produce as much as possible during this state
+    // drone_count == DRONE_TARGET && 
+    if (zergling_count == ZERGLING_TARGET && queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET) {
+        completeState();
+    }
 
 }
 
