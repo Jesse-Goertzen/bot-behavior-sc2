@@ -16,7 +16,7 @@ void StateMachineManager::StartingState(BasicSc2Bot& bot) {
 
     // build one drone
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
-    drone_count += bot.unit_manager.CountDroneEggs(bot);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
 
     if (drone_count < DRONE_TARGET) {
         bot.unit_manager.BuildDrone(bot);
@@ -34,7 +34,7 @@ void StateMachineManager::PreFirstExpansionState(BasicSc2Bot& bot) {
     const size_t MINERAL_TARGET = 250; // play with this number, or maybe calculate it based off of how far away the expansion spot will be
 
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
-    drone_count += bot.unit_manager.CountDroneEggs(bot);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
     if (drone_count < DRONE_TARGET) {
         bot.unit_manager.BuildDrone(bot);
     }
@@ -64,7 +64,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     const size_t EXTRACTOR_TARGET = 1;
     const size_t SPAWN_POOL_TARGET = 1;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
-    drone_count += bot.unit_manager.CountDroneEggs(bot);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
     size_t extractor_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
     size_t spawn_pool_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL);
 
@@ -108,9 +108,10 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     const size_t ZERGLING_TARGET = 4; // maybe 0? lol
     const size_t DRONE_TARGET = 41; // wont hit, but basically make as many as possible
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
-    drone_count += bot.unit_manager.CountDroneEggs(bot);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
     size_t queen_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_QUEEN);
     size_t zergling_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ZERGLING);
+    zergling_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_ZERGLING);
 
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
