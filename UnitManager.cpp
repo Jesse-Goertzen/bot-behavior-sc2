@@ -32,6 +32,7 @@ size_t UnitManager::CountDroneEggs(BasicSc2Bot& bot) {
     return egg_count;
 }
 
+// Make drone
 bool UnitManager::BuildDrone(BasicSc2Bot& bot) {
 
     if (bot.observation->GetMinerals() < 50) {
@@ -56,6 +57,7 @@ bool UnitManager::BuildDrone(BasicSc2Bot& bot) {
     return true;
 }
 
+// Make overlord
 bool UnitManager::BuildOverlord(BasicSc2Bot& bot) {
 
     if (bot.observation->GetMinerals() < 100) {
@@ -78,6 +80,7 @@ bool UnitManager::BuildOverlord(BasicSc2Bot& bot) {
     return false;
 }
 
+// Make queen
 bool UnitManager::BuildQueen(BasicSc2Bot& bot) { 
     // ensure sufficient minerals
     if (bot.Observation()->GetMinerals() < 150) {
@@ -110,6 +113,38 @@ bool UnitManager::BuildQueen(BasicSc2Bot& bot) {
     return true;
 }
 
+// Make a zergling. Pre much copy of queen function as both need spawning pool but less minerals
+bool UnitManager::BuildZergling(BasicSc2Bot& bot) { 
+    // ensure sufficient minerals
+    if (bot.Observation()->GetMinerals() < 50) {
+        return false; 
+    }
+
+    // ensure there is at least 1 spawning pool
+    if (bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) { return unit.unit_type == sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL; }).empty()) {
+        return false; 
+    }
+
+    const sc2::Unit* hatchery = nullptr;
+    for (const auto& base : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+        return (unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
+                unit.unit_type == sc2::UNIT_TYPEID::ZERG_LAIR ||
+                unit.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE) &&
+                unit.orders.empty(); // no current orders
+    })) {
+        hatchery = base;
+        break; // use first hatchery available
+    }
+
+    // ensure hatchery was set / available
+    if (!hatchery) {
+        return false;
+    }
+
+    // attempt to build zergling
+    bot.Actions()->UnitCommand(hatchery, sc2::ABILITY_ID::TRAIN_ZERGLING);
+    return true;
+}
 
 // Update the vectors of the units we have avalible
 void UnitManager::UpdateUnits(BasicSc2Bot& bot) {
