@@ -92,8 +92,10 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
         bot.unit_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation());
     }
 
+    // Call drone handler for new buildings
     bot.unit_manager.HandleDrones(bot);
     
+    // Once we reach the drone amount, extractor and spawn pool built complete the state
     if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
         completeState();
     }

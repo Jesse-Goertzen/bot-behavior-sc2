@@ -118,6 +118,7 @@ void UnitManager::UpdateUnits(BasicSc2Bot& bot) {
     
 }
 
+// Assigns any excess drones to ones that are under cap
 void UnitManager::HandleDrones(BasicSc2Bot& bot) {
     sc2::Units all_drones = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_DRONE));
     sc2::Units available_drones = {};
@@ -208,9 +209,11 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
         if (!base.second) continue; 
         // base saturated, all is good
         if (base_unit->assigned_harvesters == base_unit->ideal_harvesters) continue;
+        // Find the deficit of units we need
         int harvester_deficit = base_unit->ideal_harvesters - base_unit->assigned_harvesters;
         while (harvester_deficit > 0) {
             // printf("harvester deficit %d\n", harvester_deficit);
+            // If we dont have any drones, exit
             if (available_drones.empty()) break;
             const sc2::Unit* drone = available_drones.back();
             available_drones.pop_back();
