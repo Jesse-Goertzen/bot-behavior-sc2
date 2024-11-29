@@ -665,3 +665,26 @@ bool UnitManager::TryMorphToLair(BasicSc2Bot& bot) {
     bot.Actions()->UnitCommand(start_base, sc2::ABILITY_ID::MORPH_LAIR);
     return true;
 }
+
+// Return if any hatchery is currently training a queen
+bool UnitManager::IsQueenInTraining(BasicSc2Bot& bot) {
+    // Loop all hatcheries 
+    const sc2::Unit* hatchery = nullptr;
+    for (const auto& base : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+        return (unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
+                unit.unit_type == sc2::UNIT_TYPEID::ZERG_LAIR ||
+                unit.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE);
+    })) {
+        // Check its not destoryed
+        if (!base) {
+            return false;
+        }
+        // Check if its training a queen
+        for (const auto& order : base->orders) {
+            if (order.ability_id == sc2::ABILITY_ID::TRAIN_QUEEN) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

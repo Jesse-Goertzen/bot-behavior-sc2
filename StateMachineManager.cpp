@@ -105,9 +105,11 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
 // steps: 8, 9, 10
 // exit condition: enough gas for lair (100)
 void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
+    std::cout << "test" << std::endl;
     const size_t QUEEN_TARGET = 2;
     const size_t ZERGLING_TARGET = 2; // Changed to 2 since they are made in pairs
-    const size_t DRONE_TARGET = 42; // wont hit, but basically make as many as possible
+    // const size_t DRONE_TARGET = 42; // wont hit, but basically make as many as possible
+    const uint32_t SUPPLY_TARGET = 36;
     const size_t LAIR_TARGET = 1;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
     drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
@@ -115,8 +117,13 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     size_t zergling_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ZERGLING);
     zergling_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_ZERGLING);
     size_t lair_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LAIR); 
-
+    uint32_t supply_count = bot.observation->GetFoodUsed();
     int gas_count = bot.observation->GetVespene();
+
+    // Check if a queen is currently being trained, if so add it to the count
+    if (bot.unit_manager.IsQueenInTraining(bot)) {
+        queen_count++;
+    }
 
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
@@ -130,7 +137,8 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     }
 
     // Moved drone function down here so we dont just go for drones first... We want to proritize the other two units first
-    if (drone_count < DRONE_TARGET) {
+    // Make stop drone count after we hit the used supply target
+    if (supply_count < SUPPLY_TARGET) {
         bot.unit_manager.BuildDrone(bot);
     }
 
@@ -146,14 +154,26 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
 
     bot.unit_manager.HandleDrones(bot);
 
+    std::cout << "Food used: " << supply_count << std::endl;
+
+    std::cout << "zergling_count: " << zergling_count << std::endl;
+
+    std::cout << "queen_count: " << queen_count << std::endl;
+
+    std::cout << "drone_count: " << drone_count << std::endl;
+
+    std::cout << "lair_count: " << lair_count << std::endl;
+
+
     // Took out drone target as a condition as we just want to produce as much as possible during this state
     // drone_count == DRONE_TARGET && 
-    if (zergling_count == ZERGLING_TARGET && queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET) {
+    // Add 2 to the zergling target for final check since training 1 spawns 2
+    if (zergling_count == (ZERGLING_TARGET + 2) && queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET && supply_count == SUPPLY_TARGET) {
+        std::cout << "Done" << std::endl;
         completeState();
     }
 
 }
-
 
 void StateMachineManager::RoachWarrenState(BasicSc2Bot& bot) {
     const size_t DRONE_TARGET = 41;

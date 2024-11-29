@@ -43,7 +43,9 @@ public:
     void HandleDrones(BasicSc2Bot& bot);
     void SaturateExtractors(BasicSc2Bot& bot);
 
-    bool TryMorphToLair(BasicSc2Bot& bot) ;
+    bool TryMorphToLair(BasicSc2Bot& bot);
+
+    bool IsQueenInTraining(BasicSc2Bot& bot);
 
     // Vectors of all the units we have
     // maybe can delete?
