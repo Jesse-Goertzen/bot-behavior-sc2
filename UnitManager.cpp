@@ -160,6 +160,15 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
     // check current bases for any excess drones, either above the cap or if they are disbled
     for (const auto& base : bases) {
         const sc2::Unit* base_unit = bot.Observation()->GetUnit(base.first);
+        // If base is destroyed, skip
+        if (!base_unit) {
+            // std::cout << "INVALID BASE UNIT" << std::endl;
+            continue;
+        }
+        // If no drones break
+        if (all_drones.empty()) {
+            break;
+        }
         if (base_unit->build_progress < 1) {
             // dont check in progess bases
             continue;
@@ -168,19 +177,17 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
         if (!base.second && base_unit->assigned_harvesters > 0) {
             // all drones at a disabled base are free to be reassigned
             for (const auto& drone : all_drones) {
-                if (drone->orders.front().target_unit_tag == base.first) {
+                if (drone->orders.empty() || drone->orders.front().target_unit_tag == base.first) {
                     available_drones.push_back(drone);
                 }
             }
             continue;
         }
-
-
         // all drones above the ideal for a base are free to be reassigned
         if (base_unit->assigned_harvesters > base_unit->ideal_harvesters) {
             int excess_drones = base_unit->assigned_harvesters - base_unit->ideal_harvesters;
             for (const auto& drone : all_drones) {
-                if (drone->orders.front().target_unit_tag == base_unit->tag) {
+                if (drone->orders.empty() || drone->orders.front().target_unit_tag == base_unit->tag) {
                     available_drones.push_back(drone);
                     --excess_drones;
                     if (excess_drones == 0) break;
@@ -192,10 +199,17 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
     // check the extractors for any excess drones, either above the cap or if they are disabled
     for (const auto& extractor : extractors) {
         const sc2::Unit *extractor_unit = bot.Observation()->GetUnit(extractor.first);
+        // If extractor is destroyed, skip
+        if (!extractor_unit) {
+            continue;
+        }
         // any disabled for havest extractors can have their drones reassigned
         if (!extractor.second && extractor_unit->assigned_harvesters > 0) {
             for (const auto& drone : all_drones) {
-                if (drone->orders.front().target_unit_tag == extractor_unit->tag) {
+                if (!drone) {
+                    continue;
+                }
+                if (drone->orders.empty() || drone->orders.front().target_unit_tag == extractor_unit->tag) {
                     available_drones.push_back(drone);
                 }
             }
@@ -211,7 +225,10 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
         if (extractor_unit->assigned_harvesters > extractor_unit->ideal_harvesters) {
             int excess_drones = extractor_unit->assigned_harvesters - extractor_unit->ideal_harvesters;
             for (const auto& drone : all_drones) {
-                if (drone->orders.front().target_unit_tag == extractor_unit->tag) {
+                if (!drone) {
+                    continue;
+                }
+                if (drone->orders.empty() || drone->orders.front().target_unit_tag == extractor_unit->tag) {
                     available_drones.push_back(drone);
                     --excess_drones;
                     if (excess_drones == 0) break;
@@ -222,6 +239,9 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
     
     for (const auto& extractor : extractors) {
         const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
+        if (!extractor_unit) {
+            continue;
+        }
         // extractor disabled
         if (!extractor.second) continue; 
         // extractor is saturated already
@@ -231,6 +251,10 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
         while (harvester_deficit > 0) {
             if (available_drones.empty()) break;
             const sc2::Unit* drone = available_drones.back();
+            if (!drone) {
+                // std::cout << "INVALID DRONE UNIT" << std::endl;
+                continue;
+            }
             available_drones.pop_back();
 
             bot.Actions()->UnitCommand(drone, sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
@@ -239,6 +263,11 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
 
     for (const auto& base : bases) {
         const sc2::Unit* base_unit = bot.Observation()->GetUnit(base.first);
+        // If base is destroyed, skip
+        if (!base_unit) {
+            // std::cout << "INVALID BASE2 UNIT" << std::endl;
+            continue;
+        }
         // if the base is disabled        
         if (!base.second) continue; 
         // base saturated, all is good
@@ -250,13 +279,16 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
             // If we dont have any drones, exit
             if (available_drones.empty()) break;
             const sc2::Unit* drone = available_drones.back();
+            if (!drone) {
+                continue;
+            }
             available_drones.pop_back();
             const sc2::Unit* nearest_minerals = FindNearestMineralPatch(bot, base_unit->pos);
+            if (!nearest_minerals) continue;
             bot.Actions()->UnitCommand(drone, sc2::ABILITY_ID::HARVEST_GATHER_DRONE, nearest_minerals);
             --harvester_deficit;
         }
     }
-    std::cout << "finish" << std::endl;
 
 }
 
