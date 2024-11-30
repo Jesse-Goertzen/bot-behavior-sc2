@@ -29,6 +29,7 @@ public:
         POST_FIRST_EXPANSION,
         QUEENING,
         MORE_EXTRACTING,
+        SATURATE_EXTRACTORS,
 
 	};
 
@@ -38,6 +39,7 @@ public:
     void PostFirstExpansionState(BasicSc2Bot& bot);
     void QueeningState(BasicSc2Bot& bot);
     void MoreExtractingState(BasicSc2Bot& bot);
+    void SaturateExtractorsState(BasicSc2Bot& bot);
 
     void RoachWarrenState(BasicSc2Bot& bot);
     void BaseDefenseState(BasicSc2Bot& bot);

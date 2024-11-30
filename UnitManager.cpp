@@ -366,39 +366,68 @@ void UnitManager::HandleQueenLarvae(BasicSc2Bot& bot) {
 
 }
 
-
-
+// Fill the extractors with drones from the lair base mineral line
 void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
     size_t extractor_count = CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
     size_t base_count = CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_HATCHERY) + CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LAIR);
+    const sc2::Unit* lair = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_LAIR)).front();
     sc2::Units drones = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_DRONE));
     size_t drone_count = drones.size();
 
-    if (drone_count >= (base_count * 16 + extractor_count * 3)) {
-        // enough for everyone, let the drone handler handle it
-        HandleDrones(bot);
-        return;
-    }
+    // For drones in drones, select those that are closest to the lair
+    std::vector<const sc2::Unit*> drones_in_radius;
+    float radius = 20.0f;
 
-    if (drone_count < extractor_count * 3) {
-        // not enough drones for all extractors, not sure what to do?
-        return;
-    }
-
-    size_t drones_for_bases = drone_count - extractor_count * 3;
-    size_t drone_ind = drone_count; 
-    if (extractors.size() == 0) return;
-    // assign drones to extractors
-    for (auto& extractor : extractors) {
-        extractor.second = true;
-        const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
-        if (extractor_unit->build_progress < 1) continue;
-        int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
-        if (harvester_deficit <= 0) continue;
-        for (int i = 0; i < harvester_deficit; ++i) {
-            bot.Actions()->UnitCommand(drones[--drone_ind], sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
+    for (const auto& drone : drones) {
+        float distance = sc2::DistanceSquared2D(drone->pos, lair->pos);
+        
+        // If in radius add to list
+        if (distance <= radius * radius) {
+            drones_in_radius.push_back(drone);
         }
     }
+
+    // Loop thru each extractor and add a drone to if it can hold more
+    for (const auto& extractor : extractors) {
+        const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
+        // Check not destroyed
+        if (!extractor_unit) {
+            continue;
+        }
+        int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
+        if (harvester_deficit != 0) {
+            bot.Actions()->UnitCommand(drones_in_radius.front(), sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
+            drones_in_radius.pop_back();
+        }
+    }
+
+    // if (drone_count >= ((base_count * 16) + (extractor_count * 3))) {
+    //     // enough for everyone, let the drone handler handle it
+    //     HandleDrones(bot);
+    //     return;
+    // }
+
+    // if (drone_count < extractor_count * 3) {
+    //     // not enough drones for all extractors, train drones
+    //     bot.unit_manager.BuildDrone(bot);
+    //     std::cout << "MADE DRONE" << std::endl;
+    //     return;
+    // }
+
+    // size_t drones_for_bases = drone_count - extractor_count * 3;
+    // size_t drone_ind = drone_count; 
+    // if (extractors.size() == 0) return;
+    // // assign drones to extractors
+    // for (auto& extractor : extractors) {
+    //     extractor.second = true;
+    //     const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
+    //     if (extractor_unit->build_progress < 1) continue;
+    //     int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
+    //     if (harvester_deficit <= 0) continue;
+    //     for (int i = 0; i < harvester_deficit; ++i) {
+    //         bot.Actions()->UnitCommand(drones[--drone_ind], sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
+    //     }
+    // }
     // loop through remaining drones and assign to each base round robin
     // crashes, def fixable but i dont even know if its needed?
 
@@ -552,7 +581,7 @@ bool UnitManager::TryBuildStructure(
 
     // If no idle workers were found, select any worker
     if (!unit) {
-        std::cout << "NO WORKER FOUND" << std::endl;
+        // std::cout << "NO WORKER FOUND" << std::endl;
         unit = GetRandomEntry(workers);
     }
 
@@ -575,7 +604,7 @@ bool UnitManager::TryBuildGas(
     sc2::Units geysers = bot.observation->GetUnits(sc2::Unit::Alliance::Neutral, IsVespeneGeyser());
 
     //only search within this radius
-    float minimum_distance = 15.0f;
+    float minimum_distance = 20.0f;
     sc2::Tag closestGeyser = 0;
     for (const auto& geyser : geysers) {
         float current_distance = Distance2D(base_location, geyser->pos);

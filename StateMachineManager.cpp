@@ -127,6 +127,11 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     // build overlords as needed and as possible
     bot.unit_manager.BuildOverlord(bot);
 
+    // Morph hatchery into lair
+    if (lair_count < LAIR_TARGET) {
+        bot.unit_manager.TryMorphToLair(bot);
+    }
+
     if (queen_count < QUEEN_TARGET) {
         bot.unit_manager.BuildQueen(bot);
     }
@@ -141,10 +146,6 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
         bot.unit_manager.BuildDrone(bot);
     }
 
-    // Morph hatchery into lair
-    if (lair_count < LAIR_TARGET) {
-        bot.unit_manager.TryMorphToLair(bot);
-    }
 
     // Attempt to inject larva for each queen
     // Plan is to run inject every 29 seconds, but if we just continiously try to inject, it will fail because its already injecting
@@ -156,8 +157,8 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     // Took out drone target as a condition as we just want to produce as much as possible during this state
     // drone_count == DRONE_TARGET && 
     // Add 2 to the zergling target for final check since training 1 spawns 2
-    if (zergling_count == (ZERGLING_TARGET + 2) && queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET && supply_count == SUPPLY_TARGET) {
-        std::cout << "Queen done" << std::endl;
+    if (zergling_count >= (ZERGLING_TARGET + 2) && queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET && supply_count >= SUPPLY_TARGET) {
+        std::cout << "Queen state done" << std::endl;
         completeState();
     }
 
@@ -173,7 +174,6 @@ void StateMachineManager::MoreExtractingState(BasicSc2Bot& bot) {
     if (extractor_count < EXTRACTOR_TARGET && bot.observation->GetMinerals() > 25) {
         sc2::Units bases = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
         for (const auto& base : bases) {
-            std::cout << base->pos.x << " " << base->pos.y << std::endl;
             // If base is destroyed dont build
             if (!base) {
                 break;
@@ -184,16 +184,19 @@ void StateMachineManager::MoreExtractingState(BasicSc2Bot& bot) {
                 if (bot.unit_manager.TryBuildGas(bot, sc2::ABILITY_ID::BUILD_EXTRACTOR, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos)) {
                     break;
                 };
-                
             }
         }
     }
 
     if (extractor_count == EXTRACTOR_TARGET) {
-        std::cout << "Done" << std::endl;
         completeState();
     }
 
+}
+
+void StateMachineManager::SaturateExtractorsState(BasicSc2Bot& bot) {
+    bot.unit_manager.SaturateExtractors(bot);
+    
 }
 
 void StateMachineManager::RoachWarrenState(BasicSc2Bot& bot) {

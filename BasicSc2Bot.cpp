@@ -69,6 +69,10 @@ void BasicSc2Bot::OnStep() {
             // std::cout << "More Extracting State" << std::endl;
             state_machine.MoreExtractingState(*this);
             break;
+        case StateMachineManager::SATURATE_EXTRACTORS:
+            // std::cout << "Saturate Extractors State" << std::endl;
+            state_machine.SaturateExtractorsState(*this);
+            break;
     }
 }
 
