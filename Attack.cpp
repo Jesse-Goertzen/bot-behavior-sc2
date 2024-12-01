@@ -135,14 +135,14 @@ void Attack::AttackTargets(const sc2::ObservationInterface* observation) {
     }
     for (const auto& roach : roaches) {
         // no orders
-        if (unit->orders.empty()) {
-            Actions()->UnitCommand(unit, sc2::ABILITY_ID::ATTACK, targets.front()->pos);
+        if (roach->orders.empty()) {
+            Actions()->UnitCommand(roach, sc2::ABILITY_ID::ATTACK, targets.front()->pos);
             continue;
         }
 
         // order not attacking, make it attacking
-        if (unit->orders.front().ability_id != sc2::ABILITY_ID::ATTACK) {
-            Actions()->UnitCommand(unit, sc2::ABILITY_ID::ATTACK, targets.front()->pos);
+        if (roach->orders.front().ability_id != sc2::ABILITY_ID::ATTACK) {
+            Actions()->UnitCommand(roach, sc2::ABILITY_ID::ATTACK, targets.front()->pos);
         }
     }
 }

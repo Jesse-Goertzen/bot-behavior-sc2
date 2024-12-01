@@ -1,5 +1,10 @@
 #include "Defend.h"
 
+// Helper function to calculate distance between two points
+float Distance(const sc2::Point3D& p1, const sc2::Point3D& p2) {
+    return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+}
+
 // Get all the enemies within 10 spaces of any of our bases
 void Defend::GetEnemies(const sc2::ObservationInterface* observation) {
     enemies.clear();
@@ -16,11 +21,6 @@ void Defend::GetEnemies(const sc2::ObservationInterface* observation) {
             }
         }
     }
-}
-
-// Helper function to calculate distance between two points
-float Distance(const sc2::Point3D& p1, const sc2::Point3D& p2) {
-    return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
 }
 
 // Get all of our units that can defend
