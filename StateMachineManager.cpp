@@ -331,8 +331,11 @@ void StateMachineManager::RoachpocalypseState(BasicSc2Bot &bot) {
     bot.unit_manager.BuildOverlord(bot);
     bot.unit_manager.TryInjectLarva(bot);
 
+    if (bot.Observation().GetUpgrades().empty()) {
+        // bot.Actions()->UnitCommand()
+    }
+
     if (larva_count > 0) {
-        printf("Try build roach\n");
         bot.unit_manager.BuildRoach(bot);
     }
 }
