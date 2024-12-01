@@ -1,6 +1,5 @@
 #include "UnitManager.h"
 #include "StateMachineManager.h"
-#include "BuildingManager.h"
 
 #include "BasicSc2Bot.h"
 #include "utility.h"
@@ -16,27 +15,13 @@ void UnitManager::OnGameStart(BasicSc2Bot& bot) {
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L158
 // Count the types of the passed unit
 size_t UnitManager::CountUnitType(BasicSc2Bot& bot, sc2::UnitTypeID unit_type) {
-    return bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type)).size();
+    return bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type)).size();
 }
-
-// Count the eggs that are training drones
-// size_t UnitManager::CountDroneEggs(BasicSc2Bot& bot) {
-//     size_t egg_count = 0;
-//     sc2::Units eggs = bot.observation->GetUnits(sc2::Unit::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_EGG));
-//     for (const auto& egg : eggs) {
-//         if (!egg->orders.empty()) {
-//             if (egg->orders.front().ability_id == sc2::ABILITY_ID::TRAIN_DRONE) {
-//                 egg_count++;
-//             }
-//         }
-//     }
-//     return egg_count;
-// }
 
 // Count the eggs that are training that unit
 size_t UnitManager::CountUnitEggs(BasicSc2Bot& bot, sc2::ABILITY_ID ability) {
     size_t egg_count = 0;
-    sc2::Units eggs = bot.observation->GetUnits(sc2::Unit::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_EGG));
+    sc2::Units eggs = bot.Observation()->GetUnits(sc2::Unit::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_EGG));
     for (const auto& egg : eggs) {
         if (!egg->orders.empty()) {
             if (egg->orders.front().ability_id == ability) {
@@ -67,7 +52,7 @@ bool UnitManager::BuildDrone(BasicSc2Bot& bot) {
 
     // Attempt to build
     const sc2::Unit* larva = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_LARVA)).front();
-    bot.actions->UnitCommand(larva, sc2::ABILITY_ID::TRAIN_DRONE);
+    bot.Actions()->UnitCommand(larva, sc2::ABILITY_ID::TRAIN_DRONE);
 
     return true;
 }
@@ -75,7 +60,7 @@ bool UnitManager::BuildDrone(BasicSc2Bot& bot) {
 // Make overlord
 bool UnitManager::BuildOverlord(BasicSc2Bot& bot) {
 
-    if (bot.observation->GetMinerals() < 100) {
+    if (bot.Observation()->GetMinerals() < 100) {
         // std::cout << "Not enough minerals to train overlord! (" << observation_->GetMinerals() << "/100)" << std::endl;
         return false;
     }
@@ -86,9 +71,9 @@ bool UnitManager::BuildOverlord(BasicSc2Bot& bot) {
     }
 
     // spawn an overlord when appropriate, if we are well below our food cap, no need to spawn an overlord
-    if (bot.observation->GetFoodUsed() >= bot.observation->GetFoodCap() - 4) {
+    if (bot.Observation()->GetFoodUsed() >= bot.Observation()->GetFoodCap() - 4) {
         const sc2::Unit* larva = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_LARVA)).front();
-        bot.actions->UnitCommand(larva, sc2::ABILITY_ID::TRAIN_OVERLORD);
+        bot.Actions()->UnitCommand(larva, sc2::ABILITY_ID::TRAIN_OVERLORD);
         return true;
     }
 
@@ -392,7 +377,8 @@ void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
     for (auto& extractor : extractors) {
         extractor.second = true;
         const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
-        if (extractor_unit->build_progress < 1) continue;
+        if (!extractor_unit || !extractor_unit->is_alive ||extractor_unit->build_progress < 1) continue;
+
         int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
         if (harvester_deficit <= 0) continue;
         for (int i = 0; i < harvester_deficit; ++i) {
@@ -439,7 +425,7 @@ bool UnitManager::TryExpand(BasicSc2Bot& bot, sc2::AbilityID build_ability, sc2:
         }
 
         if (current_distance < minimum_distance) {
-            if (bot.query->Placement(build_ability, expansion)) {
+            if (bot.Query()->Placement(build_ability, expansion)) {
                 closest_expansion = expansion;
                 minimum_distance = current_distance;
             }
@@ -465,7 +451,7 @@ bool UnitManager::TryBuildStructure(
         bool isExpansion = false
     ) 
 {
-    sc2::Units workers = bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
+    sc2::Units workers = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
 
     // If we have no workers Don't build
     if (workers.empty()) {
@@ -496,7 +482,7 @@ bool UnitManager::TryBuildStructure(
     }
 
     // Check to see if unit can make it there
-    if (bot.query->PathingDistance(unit, location) < 0.1f) {
+    if (bot.Query()->PathingDistance(unit, location) < 0.1f) {
         return false;
     }
 
@@ -509,8 +495,8 @@ bool UnitManager::TryBuildStructure(
     }
 
     // Check to see if unit can build there
-    if (bot.query->Placement(ability_type_for_structure, location)) {
-        bot.actions->UnitCommand(unit, ability_type_for_structure, location);
+    if (bot.Query()->Placement(ability_type_for_structure, location)) {
+        bot.Actions()->UnitCommand(unit, ability_type_for_structure, location);
         return true;
     }
     return false;
@@ -525,8 +511,8 @@ bool UnitManager::TryBuildStructure(
         sc2::Tag location_tag
     ) 
 {
-    sc2::Units workers = bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
-    const sc2::Unit* target = bot.observation->GetUnit(location_tag);
+    sc2::Units workers = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
+    const sc2::Unit* target = bot.Observation()->GetUnit(location_tag);
 
     if (workers.empty()) {
         return false;
@@ -557,8 +543,8 @@ bool UnitManager::TryBuildStructure(
     }
 
     // Check to see if unit can build there
-    if (bot.query->Placement(ability_type_for_structure, target->pos)) {
-        bot.actions->UnitCommand(unit, ability_type_for_structure, target);
+    if (bot.Query()->Placement(ability_type_for_structure, target->pos)) {
+        bot.Actions()->UnitCommand(unit, ability_type_for_structure, target);
         return true;
     }
     return false;
@@ -572,7 +558,7 @@ bool UnitManager::TryBuildGas(
         sc2::Point2D base_location
     ) 
 {
-    sc2::Units geysers = bot.observation->GetUnits(sc2::Unit::Alliance::Neutral, IsVespeneGeyser());
+    sc2::Units geysers = bot.Observation()->GetUnits(sc2::Unit::Alliance::Neutral, IsVespeneGeyser());
 
     //only search within this radius
     float minimum_distance = 20.0f;
@@ -580,7 +566,7 @@ bool UnitManager::TryBuildGas(
     for (const auto& geyser : geysers) {
         float current_distance = Distance2D(base_location, geyser->pos);
         if (current_distance < minimum_distance) {
-            if (bot.query->Placement(build_ability, geyser->pos)) {
+            if (bot.Query()->Placement(build_ability, geyser->pos)) {
                 minimum_distance = current_distance;
                 closestGeyser = geyser->tag;
             }

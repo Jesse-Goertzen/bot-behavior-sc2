@@ -5,7 +5,6 @@
 
 #include "StateMachineManager.h"
 #include "UnitManager.h"
-#include "BuildingManager.h"
 
 void BasicSc2Bot::OnGameStart() {
 
@@ -97,7 +96,6 @@ void BasicSc2Bot::OnBuildingConstructionComplete(const sc2::Unit* unit) {
     }
 
     if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR) {
-        printf("adding extractor to unit manager\n");
         unit_manager.extractors.push_back({unit->tag, true});
     }
 }

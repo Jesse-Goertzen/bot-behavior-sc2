@@ -1,6 +1,5 @@
 #include "StateMachineManager.h"
 #include "UnitManager.h"
-#include "BuildingManager.h"
 #include "utility.h"
 
 #include "BasicSc2Bot.h"
@@ -40,7 +39,7 @@ void StateMachineManager::PreFirstExpansionState(BasicSc2Bot& bot) {
         bot.unit_manager.BuildDrone(bot);
     }
 
-    if (drone_count >= DRONE_TARGET && bot.observation->GetMinerals() >= MINERAL_TARGET) {
+    if (drone_count >= DRONE_TARGET && bot.Observation()->GetMinerals() >= MINERAL_TARGET) {
         completeState();
         printf("PreExpansion State Done\n");
     }
@@ -48,7 +47,7 @@ void StateMachineManager::PreFirstExpansionState(BasicSc2Bot& bot) {
 
 void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
     // step 4
-    if (bot.observation->GetMinerals() > 300) {
+    if (bot.Observation()->GetMinerals() > 300) {
 
         if (bot.unit_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
             std::cout << "Expanded State Done" << std::endl;
@@ -80,8 +79,8 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     }
     
     // build an extractor if we havent started building one yet
-    if (extractor_count < EXTRACTOR_TARGET && bot.observation->GetMinerals() > 25) {
-        sc2::Units bases = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
+    if (extractor_count < EXTRACTOR_TARGET && bot.Observation()->GetMinerals() > 25) {
+        sc2::Units bases = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
         for (const auto& base : bases) {
             if (base->build_progress == 1) {
                 bot.unit_manager.TryBuildGas(bot, sc2::ABILITY_ID::BUILD_EXTRACTOR, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
@@ -91,7 +90,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
         }
     }
 
-    if (spawn_pool_count < 1 && bot.observation->GetMinerals() > 200) {
+    if (spawn_pool_count < 1 && bot.Observation()->GetMinerals() > 200) {
         bot.unit_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation());
     }
 
@@ -119,6 +118,7 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     zergling_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_ZERGLING);
     size_t lair_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LAIR); 
     size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
+
     // Check if a queen is currently being trained, if so add it to the count
     if (bot.unit_manager.IsQueenInTraining(bot)) {
         queen_count++;
@@ -176,8 +176,8 @@ void StateMachineManager::MoreExtractingState(BasicSc2Bot& bot) {
     size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
 
     // Build extractors
-    if (extractor_count < EXTRACTOR_TARGET && bot.observation->GetMinerals() > 25) {
-        sc2::Units bases = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
+    if (extractor_count < EXTRACTOR_TARGET && bot.Observation()->GetMinerals() > 25) {
+        sc2::Units bases = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
         for (const auto& base : bases) {
             // If base is destroyed dont build
             if (!base) {
@@ -254,7 +254,7 @@ void StateMachineManager::RoachWarrenState(BasicSc2Bot& bot) {
     }
 
     if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ROACHWARREN) < 1) {
-        bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_ROACHWARREN, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation());    
+        bot.unit_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_ROACHWARREN, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation());    
     }   
 
     if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ROACHWARREN) > 0) {
@@ -277,7 +277,7 @@ void StateMachineManager::BaseDefenseState(BasicSc2Bot& bot) {
         // could be an issue if building the spore crawlers fails for some reason, would have to check where to build
         // if we want one at each hatchery
         for (const auto& base : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, IsTownHall())) {
-            bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPORECRAWLER, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
+            bot.unit_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPORECRAWLER, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
         }
     }
 
@@ -295,7 +295,7 @@ void StateMachineManager::SecondExpansionState(BasicSc2Bot& bot) {
     const size_t DRONE_TARGET = 41;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
     drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
-    size_t base_count = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall()).size();
+    size_t base_count = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, IsTownHall()).size();
 
     bot.unit_manager.BuildOverlord(bot);
     bot.unit_manager.TryInjectLarva(bot);
