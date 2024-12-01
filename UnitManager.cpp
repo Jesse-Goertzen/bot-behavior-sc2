@@ -179,44 +179,22 @@ bool UnitManager::BuildZergling(BasicSc2Bot& bot) {
     return true;
 }
 
-// Update the vectors of the units we have avalible
-void UnitManager::UpdateUnits(BasicSc2Bot& bot) {
+bool UnitManager::BuildRoach(BasicSc2Bot& bot) {
+    if (bot.Observation()->GetMinerals() < 75 || bot.Observation()->GetVespene() < 25) {
+        return false;
+    }
 
-    // Update the larva vector
-    // larva = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_LARVA;
-    // });
+    if (bot.Observation()->GetFoodCap() - bot.Observation()->GetFoodUsed() < 2) {
+        return false;
+    }
 
-    // // Update the drones vector
-    // drones = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE;
-    // });
+    if (CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA) == 0) {
+        return false;
+    }
 
-    // // Update overlords
-    // overlords = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_OVERLORD;
-    // });
-
-    // hatcheries = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY;
-    // });
-
-    // queens = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_QUEEN;
-    // });
-
-    // roaches = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_ROACH;
-    // });
-    
-    // zerglings = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_ZERGLING;
-    // });
-
-    // extractors = bot.observation->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
-    //     return unit.unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR;
-    // });
-    
+    const sc2::Unit* larva = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_LARVA)).front();
+    bot.Actions()->UnitCommand(larva, sc2::ABILITY_ID::TRAIN_ROACH);
+    return true;
 }
 
 // Assigns any excess drones to bases that are under cap
@@ -359,13 +337,6 @@ void UnitManager::HandleDrones(BasicSc2Bot& bot) {
 
 }
 
-// Keep turning larva into roaches, but keep at least 1 larva 
-void UnitManager::HandleQueenLarvae(BasicSc2Bot& bot) {
-
-
-
-}
-
 // Fill the extractors with drones from the lair base mineral line
 void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
     size_t extractor_count = CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
@@ -374,32 +345,32 @@ void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
     sc2::Units drones = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_DRONE));
     size_t drone_count = drones.size();
 
-    // For drones in drones, select those that are closest to the lair
-    std::vector<const sc2::Unit*> drones_in_radius;
-    float radius = 20.0f;
+    // // For drones in drones, select those that are closest to the lair
+    // std::vector<const sc2::Unit*> drones_in_radius;
+    // float radius = 20.0f;
 
-    for (const auto& drone : drones) {
-        float distance = sc2::DistanceSquared2D(drone->pos, lair->pos);
+    // for (const auto& drone : drones) {
+    //     float distance = sc2::DistanceSquared2D(drone->pos, lair->pos);
         
-        // If in radius add to list
-        if (distance <= radius * radius) {
-            drones_in_radius.push_back(drone);
-        }
-    }
+    //     // If in radius add to list
+    //     if (distance <= radius * radius) {
+    //         drones_in_radius.push_back(drone);
+    //     }
+    // }
 
-    // Loop thru each extractor and add a drone to if it can hold more
-    for (const auto& extractor : extractors) {
-        const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
-        // Check not destroyed
-        if (!extractor_unit) {
-            continue;
-        }
-        int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
-        if (harvester_deficit != 0) {
-            bot.Actions()->UnitCommand(drones_in_radius.front(), sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
-            drones_in_radius.pop_back();
-        }
-    }
+    // // Loop thru each extractor and add a drone to if it can hold more
+    // for (const auto& extractor : extractors) {
+    //     const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
+    //     // Check not destroyed
+    //     if (!extractor_unit) {
+    //         continue;
+    //     }
+    //     int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
+    //     if (harvester_deficit != 0) {
+    //         bot.Actions()->UnitCommand(drones_in_radius.front(), sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
+    //         drones_in_radius.pop_back();
+    //     }
+    // }
 
     // if (drone_count >= ((base_count * 16) + (extractor_count * 3))) {
     //     // enough for everyone, let the drone handler handle it
@@ -414,20 +385,20 @@ void UnitManager::SaturateExtractors(BasicSc2Bot& bot) {
     //     return;
     // }
 
-    // size_t drones_for_bases = drone_count - extractor_count * 3;
-    // size_t drone_ind = drone_count; 
-    // if (extractors.size() == 0) return;
-    // // assign drones to extractors
-    // for (auto& extractor : extractors) {
-    //     extractor.second = true;
-    //     const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
-    //     if (extractor_unit->build_progress < 1) continue;
-    //     int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
-    //     if (harvester_deficit <= 0) continue;
-    //     for (int i = 0; i < harvester_deficit; ++i) {
-    //         bot.Actions()->UnitCommand(drones[--drone_ind], sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
-    //     }
-    // }
+    size_t drones_for_bases = drone_count - extractor_count * 3;
+    size_t drone_ind = drone_count; 
+    if (extractors.size() == 0) return;
+    // assign drones to extractors
+    for (auto& extractor : extractors) {
+        extractor.second = true;
+        const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
+        if (extractor_unit->build_progress < 1) continue;
+        int harvester_deficit = extractor_unit->ideal_harvesters - extractor_unit->assigned_harvesters;
+        if (harvester_deficit <= 0) continue;
+        for (int i = 0; i < harvester_deficit; ++i) {
+            bot.Actions()->UnitCommand(drones[--drone_ind], sc2::ABILITY_ID::HARVEST_GATHER_DRONE, extractor_unit);
+        }
+    }
     // loop through remaining drones and assign to each base round robin
     // crashes, def fixable but i dont even know if its needed?
 

@@ -30,7 +30,10 @@ public:
         QUEENING,
         MORE_EXTRACTING,
         SATURATE_EXTRACTORS,
-
+        ROACH_WARREN,
+        BASE_DEFENSE,
+        SECOND_EXPANSION,
+        ROACHPOCALYPSE
 	};
 
     void StartingState(BasicSc2Bot& bot);
@@ -40,9 +43,10 @@ public:
     void QueeningState(BasicSc2Bot& bot);
     void MoreExtractingState(BasicSc2Bot& bot);
     void SaturateExtractorsState(BasicSc2Bot& bot);
-
     void RoachWarrenState(BasicSc2Bot& bot);
     void BaseDefenseState(BasicSc2Bot& bot);
+    void SecondExpansionState(BasicSc2Bot& bot);
+    void RoachpocalypseState(BasicSc2Bot& bot);
 
     // What state the bot is currently in
     BotState current_state;

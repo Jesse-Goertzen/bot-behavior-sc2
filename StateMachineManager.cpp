@@ -25,6 +25,7 @@ void StateMachineManager::StartingState(BasicSc2Bot& bot) {
     // complete the state once we have enough minerals to build an overlord
     if (bot.unit_manager.BuildOverlord(bot)) {
         completeState();
+        printf("Starting State Done\n");
     }
 }
 
@@ -41,6 +42,7 @@ void StateMachineManager::PreFirstExpansionState(BasicSc2Bot& bot) {
 
     if (drone_count >= DRONE_TARGET && bot.observation->GetMinerals() >= MINERAL_TARGET) {
         completeState();
+        printf("PreExpansion State Done\n");
     }
 }
 
@@ -49,7 +51,7 @@ void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
     if (bot.observation->GetMinerals() > 300) {
 
         if (bot.unit_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
-            std::cout << "Expanded" << std::endl;
+            std::cout << "Expanded State Done" << std::endl;
             completeState();
         }
     }
@@ -99,6 +101,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     // Once we reach the drone amount, extractor and spawn pool built complete the state
     if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
         completeState();
+        printf("Post First Expansion State Done\n");
     }
 }
 
@@ -107,8 +110,7 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
 void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     const size_t QUEEN_TARGET = 2;
     const size_t ZERGLING_TARGET = 2; // Changed to 2 since they are made in pairs
-    // const size_t DRONE_TARGET = 42; // wont hit, but basically make as many as possible
-    const uint32_t SUPPLY_TARGET = 36;
+    const size_t DRONE_TARGET = 41; // wont hit, but basically make as many as possible
     const size_t LAIR_TARGET = 1;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
     drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
@@ -116,9 +118,7 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     size_t zergling_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ZERGLING);
     zergling_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_ZERGLING);
     size_t lair_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LAIR); 
-    uint32_t supply_count = bot.observation->GetFoodUsed();
-    int gas_count = bot.observation->GetVespene();
-
+    size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
     // Check if a queen is currently being trained, if so add it to the count
     if (bot.unit_manager.IsQueenInTraining(bot)) {
         queen_count++;
@@ -142,7 +142,7 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
 
     // Moved drone function down here so we dont just go for drones first... We want to proritize the other two units first
     // Make stop drone count after we hit the used supply target
-    if (supply_count < SUPPLY_TARGET) {
+    if (zergling_count >= ZERGLING_TARGET && drone_count < DRONE_TARGET) {
         bot.unit_manager.BuildDrone(bot);
     }
 
@@ -157,7 +157,8 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     // Took out drone target as a condition as we just want to produce as much as possible during this state
     // drone_count == DRONE_TARGET && 
     // Add 2 to the zergling target for final check since training 1 spawns 2
-    if (zergling_count >= (ZERGLING_TARGET + 2) && queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET && supply_count >= SUPPLY_TARGET) {
+    // printf("QState: Q:%zd L:%zd D:%zd Z:%zd, LV:%zd\n", queen_count, lair_count, drone_count, zergling_count, larva_count);
+    if (queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET) {
         std::cout << "Queen state done" << std::endl;
         completeState();
     }
@@ -168,7 +169,11 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
 // exit condition: drones assigned and two extractors built
 void StateMachineManager::MoreExtractingState(BasicSc2Bot& bot) { 
     const size_t EXTRACTOR_TARGET = 3; // 2 + the one before
+    const size_t DRONE_TARGET = 41;
     size_t extractor_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
+    size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
+    size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
 
     // Build extractors
     if (extractor_count < EXTRACTOR_TARGET && bot.observation->GetMinerals() > 25) {
@@ -188,32 +193,72 @@ void StateMachineManager::MoreExtractingState(BasicSc2Bot& bot) {
         }
     }
 
+    if (drone_count < DRONE_TARGET) {
+        bot.unit_manager.BuildDrone(bot);
+    }
+
     if (extractor_count == EXTRACTOR_TARGET) {
         completeState();
+        printf("More Extractor State Done\n");
     }
 
 }
 
 void StateMachineManager::SaturateExtractorsState(BasicSc2Bot& bot) {
+    const size_t DRONE_TARGET = 41;
+    size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
+
     bot.unit_manager.SaturateExtractors(bot);
-    
+
+    bot.unit_manager.BuildOverlord(bot);
+    bot.unit_manager.TryInjectLarva(bot);
+    if (drone_count < DRONE_TARGET) {
+        bot.unit_manager.BuildDrone(bot);
+    }
+    bot.unit_manager.HandleDrones(bot);
+    bool extractors_saturated = true;
+    if (bot.unit_manager.extractors.size() < 3) {
+        extractors_saturated = false;
+    }
+    for (const auto& extractor : bot.unit_manager.extractors) {
+        const sc2::Unit* extractor_unit = bot.Observation()->GetUnit(extractor.first);
+        // if (!extractor_unit) continue;
+        if (extractor_unit->build_progress < 1) {
+            extractors_saturated = false;
+        }
+        // if any extractors are not saturated, try again
+        if (extractor_unit->assigned_harvesters < 3) {
+            extractors_saturated = false;
+        }
+    }
+
+    // all extractors are saturated (or destroyed lol) 
+    if (extractors_saturated) {
+        printf("Saturation State Complete\n");
+        completeState();
+    }
 }
 
 void StateMachineManager::RoachWarrenState(BasicSc2Bot& bot) {
     const size_t DRONE_TARGET = 41;
+    size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
 
     bot.unit_manager.BuildOverlord(bot);
-    bot.unit_manager.HandleQueenLarvae(bot);
+    bot.unit_manager.TryInjectLarva(bot);
+    bot.unit_manager.HandleDrones(bot);
 
-    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE) < DRONE_TARGET) {
+    if (drone_count < DRONE_TARGET) {
         bot.unit_manager.BuildDrone(bot);
     }
 
     if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ROACHWARREN) < 1) {
         bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_ROACHWARREN, sc2::UNIT_TYPEID::ZERG_DRONE, bot.GetStartLocation());    
-    }
+    }   
 
     if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ROACHWARREN) > 0) {
+        printf("Roach Warren State Done\n");
         completeState();
     }
 }
@@ -221,73 +266,73 @@ void StateMachineManager::RoachWarrenState(BasicSc2Bot& bot) {
 void StateMachineManager::BaseDefenseState(BasicSc2Bot& bot) {
     const size_t DRONE_TARGET = 41;
     const size_t SPORE_CRAWLER_TARGET = 2;
-
+    size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
+    
     bot.unit_manager.BuildOverlord(bot);
-    bot.unit_manager.HandleQueenLarvae(bot);
+    bot.unit_manager.TryInjectLarva(bot);
+    bot.unit_manager.HandleDrones(bot);
 
     if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPORECRAWLER) < SPORE_CRAWLER_TARGET) {
         // could be an issue if building the spore crawlers fails for some reason, would have to check where to build
         // if we want one at each hatchery
-        for (const auto& hatchery : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_HATCHERY))) {
-            bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPORECRAWLER, sc2::UNIT_TYPEID::ZERG_DRONE, hatchery->pos);
+        for (const auto& base : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, IsTownHall())) {
+            bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPORECRAWLER, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
         }
     }
 
-    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE) < DRONE_TARGET) {
+    if (drone_count < DRONE_TARGET) {
         bot.unit_manager.BuildDrone(bot);
     }
 
     if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPORECRAWLER) >= SPORE_CRAWLER_TARGET) {
+        printf("Base Defense State Done\n");
         completeState();
     }
 }
 
+void StateMachineManager::SecondExpansionState(BasicSc2Bot& bot) {
+    const size_t DRONE_TARGET = 41;
+    size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
+    drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
+    size_t base_count = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall()).size();
 
-// void StateMachineManager::
-// // WAIT_FOR_HATCHERY
-// void StateMachineManager::WaitForHatchery(BasicSc2Bot& bot) {
+    bot.unit_manager.BuildOverlord(bot);
+    bot.unit_manager.TryInjectLarva(bot);
     
-//     // Get all the town halls
-//     sc2::Units town_halls = bot.observation->GetUnits(sc2::Unit::Alliance::Self, IsTownHall());
+    if (drone_count < DRONE_TARGET) {
+        bot.unit_manager.BuildDrone(bot);
+    }
 
-//     // Max distance from starting place
-//     float max_distance = 0.0f;
+    // want 2 hatcheries in addtion to the lair we have
+    if (base_count < 3) {
+        bot.unit_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE);
+    }
 
-//     // Find the Hatchery farthest from the starting location.
-//     // Will have to change this if we want to select them based of build order or soemthing else
-//     for (const auto& town_hall : town_halls) {
-//         float distance = Distance2D(bot.GetStartLocation(), town_hall->pos);
-//         if (distance > max_distance) {
-//             max_distance = distance;
-//             bot.first_expansion = town_hall;
-//         }
-//     }
+    if (bot.unit_manager.bases.size() == 3) {
+        // when all bases are complete, disable workers from going to the third hatchery
+        bot.unit_manager.bases[2].second = false;
+        bot.unit_manager.BuildQueen(bot);
+    }
+    
+    // this should happen after we check if the final hatchery is complete because we do not want to assign drones to it
+    bot.unit_manager.HandleDrones(bot);
 
-//     if (bot.first_expansion) {
-//         // Check the Hatchery is built.
-//         if (bot.first_expansion->build_progress >= 1.0f) {
-//             std::cout << "Constucting hatchery... (100%)" << std::endl;
-//             std::cout << "CREATED HATCHERY AT " << bot.first_expansion->pos.x << ", " << bot.first_expansion->pos.y << std::endl;
+    if (drone_count >= DRONE_TARGET && base_count >= 3) {
+        printf("Second Expansion State Complete\n");
+        completeState();
+    }
+}
 
-//             bot.actions->UnitCommand(bot.first_expansion, sc2::ABILITY_ID::TRAIN_DRONE);
+void StateMachineManager::RoachpocalypseState(BasicSc2Bot &bot) {
+    size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
+    
+    bot.unit_manager.HandleDrones(bot);
+    bot.unit_manager.BuildOverlord(bot);
+    bot.unit_manager.TryInjectLarva(bot);
 
-//             bot.state_machine.current_state = StateMachineManager::IDLE;
-//         } 
-//         // Progress bar
-//         else if (bot.first_expansion->build_progress == 0.25f) {
-//             std::cout << "Constucting hatchery... (25%)" << std::endl;
-//         }
-//         else if (bot.first_expansion->build_progress == 0.5f) {
-//             std::cout << "Constucting hatchery... (50%)" << std::endl;
-//         }
-//         else if (bot.first_expansion->build_progress == 0.75f) {
-//             std::cout << "Constucting hatchery... (75%)" << std::endl;
-//         }
-//     }
-
-//     // While we wait for hatchery, check for when we reach 200 minerals to make a single spawning pool
-//     if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL) < 1) {
-//         if (bot.building_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPAWNINGPOOL, sc2::UNIT_TYPEID::ZERG_DRONE)) {
-//         }
-//     }    
-// }
+    if (larva_count > 0) {
+        printf("Try build roach\n");
+        bot.unit_manager.BuildRoach(bot);
+    }
+}

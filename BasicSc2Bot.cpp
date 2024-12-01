@@ -34,9 +34,6 @@ void BasicSc2Bot::OnGameStart() {
 }
 
 void BasicSc2Bot::OnStep() {
-    // On each step update the units in the unit manager
-    unit_manager.UpdateUnits(*this);
-
     // Switch case for all the steps we will do
     switch (state_machine.current_state) {
         
@@ -73,6 +70,22 @@ void BasicSc2Bot::OnStep() {
             // std::cout << "Saturate Extractors State" << std::endl;
             state_machine.SaturateExtractorsState(*this);
             break;
+
+        case StateMachineManager::ROACH_WARREN:
+            state_machine.RoachWarrenState(*this);
+            break;
+
+        case StateMachineManager::BASE_DEFENSE:
+            state_machine.BaseDefenseState(*this);
+            break;
+
+        case StateMachineManager::SECOND_EXPANSION:
+            state_machine.SecondExpansionState(*this);
+            break;
+
+        case StateMachineManager::ROACHPOCALYPSE:
+            state_machine.RoachpocalypseState(*this);
+            break;
     }
 }
 
@@ -84,6 +97,7 @@ void BasicSc2Bot::OnBuildingConstructionComplete(const sc2::Unit* unit) {
     }
 
     if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR) {
+        printf("adding extractor to unit manager\n");
         unit_manager.extractors.push_back({unit->tag, true});
     }
 }
