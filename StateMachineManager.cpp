@@ -234,6 +234,8 @@ void StateMachineManager::SaturateExtractorsState(BasicSc2Bot& bot) {
     }
 
     // all extractors are saturated (or destroyed lol) 
+    // set to true for testing, was if extractors_saturated instead of true
+    
     if (extractors_saturated) {
         printf("Saturation State Complete\n");
         completeState();
@@ -326,14 +328,25 @@ void StateMachineManager::SecondExpansionState(BasicSc2Bot& bot) {
 
 void StateMachineManager::RoachpocalypseState(BasicSc2Bot &bot) {
     size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
-    
+
+    // Get the roach warren
+    const sc2::Unit* roach_warren = nullptr;
+    for (const auto& unit : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+            return unit.unit_type == sc2::UNIT_TYPEID::ZERG_ROACHWARREN;
+        })) {
+        if (unit->build_progress == 1.0 && unit->orders.empty()) {
+            roach_warren = unit;
+            break;
+        }
+    }
+
+    if (bot.Observation()->GetUpgrades().empty() && roach_warren) {
+        bot.Actions()->UnitCommand(roach_warren, sc2::ABILITY_ID::RESEARCH_GLIALREGENERATION);
+    }
+
     bot.unit_manager.HandleDrones(bot);
     bot.unit_manager.BuildOverlord(bot);
     bot.unit_manager.TryInjectLarva(bot);
-
-    if (bot.Observation().GetUpgrades().empty()) {
-        // bot.Actions()->UnitCommand()
-    }
 
     if (larva_count > 0) {
         bot.unit_manager.BuildRoach(bot);
