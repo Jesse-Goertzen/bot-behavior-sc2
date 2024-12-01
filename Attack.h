@@ -2,7 +2,6 @@
 #define ATTACK_H
 
 #include <vector>
-#include <unordered_map>
 #include "sc2api/sc2_api.h"
 #include "sc2api/sc2_args.h"
 #include "sc2api/sc2_unit_filters.h"
