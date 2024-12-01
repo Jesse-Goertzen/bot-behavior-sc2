@@ -42,14 +42,18 @@ Upgraded PLAN?
 // main function for controlling the roach rush
 // determine when and how we attack
 void Attack::RoachRush(const sc2::ObservationInterface* observation) {
-    bool attack_now = ScoutWithOverlord(observation);
 
-    if(!attack_now){
-        std::cout << "Wait for more roaches, enemy defense units exceed threshold" << std::endl;
-        return;
-    }
-    // ...
-    // implement plan
+    // Prio attack
+    GetPriorityTargets(observation);
+
+    // Weak attack
+    //GetWeakTargets(observation);
+
+    // Close attack
+    //GetCloseTargets(observation);
+
+    GatherRoaches(observation);
+    AttackTargets(observation);
 }
 
 // -------------attack policies----------------
@@ -130,7 +134,16 @@ void Attack::AttackTargets(const sc2::ObservationInterface* observation) {
         return;
     }
     for (const auto& roach : roaches) {
+        // no orders
+        if (unit->orders.empty()) {
+            Actions()->UnitCommand(unit, sc2::ABILITY_ID::ATTACK, targets.front()->pos);
+            continue;
+        }
 
+        // order not attacking, make it attacking
+        if (unit->orders.front().ability_id != sc2::ABILITY_ID::ATTACK) {
+            Actions()->UnitCommand(unit, sc2::ABILITY_ID::ATTACK, targets.front()->pos);
+        }
     }
 }
 
@@ -177,7 +190,7 @@ bool Attack::ScoutWithOverlord(const sc2::ObservationInterface* observation) {
     }
 
     std::cout << "defensive units found: " << defense_units << std::endl;
-    return (defense_units <= 2 && defense_structures <= 2); // threshold for defense units/structures ?? completely random right now
+    return (defense_units <= 10 && defense_structures <= 2); // threshold for defense units/structures ?? completely random right now
 }
 
 // basic attack functions: https://github.com/Blizzard/s2client-api/blob/master/examples/common/bot_examples.cc
