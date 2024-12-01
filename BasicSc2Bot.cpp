@@ -190,6 +190,41 @@ bool BasicSc2Bot::BuildOverlord() {
     return true;
 }
 
+bool BasicSc2Bot::BuildQueen() { 
+
+    // ensure sufficient minerals
+    if (Observation()->GetMinerals() < 150) {
+        return false; 
+    }
+
+    // ensure there is atleast 1 spawning pool
+    if (Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) { return unit.unit_type == sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL; }).empty()) {
+        return false; 
+    }
+
+    // 
+    const sc2::Unit* hatchery = nullptr;
+    for (const auto& base : Observation()->GetUnits(sc2::Unit::Alliance::Self, [](const sc2::Unit& unit) {
+        return (unit.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
+                unit.unit_type == sc2::UNIT_TYPEID::ZERG_LAIR ||
+                unit.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE) &&
+                unit.orders.empty(); // no current orders
+    })) {
+        hatchery = base;
+        break; // use first hatchery available
+    }
+
+    // ensure hatchery was set / available
+    if (!hatchery) {
+        return false;
+    }
+
+    // attempt to build queen
+    Actions()->UnitCommand(hatchery, sc2::ABILITY_ID::TRAIN_QUEEN);
+    std::cout << "Queen spawned" << std::endl;
+    return true;
+}
+
 // Attempt to build a structure on creep from a random location on the creep
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L1363
 bool BasicSc2Bot::TryBuildOnCreep(sc2::AbilityID ability_type_for_structure, sc2::UnitTypeID unit_type) {
@@ -318,4 +353,34 @@ bool BasicSc2Bot::TryBuildStructure(sc2::AbilityID ability_type_for_structure, s
 // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L158
 size_t BasicSc2Bot::CountUnitType(const sc2::ObservationInterface* observation, sc2::UnitTypeID unit_type) {
     return observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type)).size();
+}
+
+
+void BasicSc2Bot::TryInjectLarva() {
+
+    const sc2::ObservationInterface* observation = Observation();
+    sc2::Units queens = observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(sc2::UNIT_TYPEID::ZERG_QUEEN));
+    sc2::Units hatcheries = observation->GetUnits(sc2::Unit::Alliance::Self,IsTownHall());
+
+     // no queens or no hatcheries
+    if (queens.empty() || hatcheries.empty())
+        return;
+
+    for (size_t i = 0; i < queens.size(); ++i) {
+        for (size_t j = 0; j < hatcheries.size(); ++j) {
+
+            // hatchery isnt complete, so ignore it
+            if (hatcheries.at(j)->build_progress != 1) {
+                continue;
+            }
+            else {
+                if (i < queens.size()) {
+                    if (queens.at(i)->energy >= 25 && queens.at(i)->orders.empty()) {
+                        Actions()->UnitCommand(queens.at(i), sc2::ABILITY_ID::EFFECT_INJECTLARVA, hatcheries.at(j));
+                    }
+                    ++i;
+                }
+            }
+        }
+    }
 }
