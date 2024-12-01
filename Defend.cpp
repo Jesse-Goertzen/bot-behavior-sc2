@@ -27,10 +27,11 @@ float Distance(const sc2::Point3D& p1, const sc2::Point3D& p2) {
 void Defend::GatherDefenders(const sc2::ObservationInterface* observation) {
     defenders.clear();
 
-    // Collect all queens and zerglings
+    // Collect all queens, zerglings, and roaches
     for (const auto& unit : observation->GetUnits(sc2::Unit::Alliance::Self)) {
         if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_QUEEN || 
-            unit->unit_type == sc2::UNIT_TYPEID::ZERG_ZERGLING) {
+            unit->unit_type == sc2::UNIT_TYPEID::ZERG_ZERGLING ||
+            unit->unit_type == sc2::UNIT_TYPEID::ZERG_ROACH) {
             defenders.push_back(unit);
         }
     }
