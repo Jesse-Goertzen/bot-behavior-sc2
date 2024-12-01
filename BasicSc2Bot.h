@@ -3,18 +3,17 @@
 
 #include "StateMachineManager.h"
 #include "UnitManager.h"
-#include "BuildingManager.h"
 
 class BasicSc2Bot : public sc2::Agent {
 public:
 
 	virtual void OnGameStart();
 	virtual void OnStep();
+	virtual void OnBuildingConstructionComplete(const sc2::Unit* unit);
 
 	// Each of our managers
 	StateMachineManager state_machine;
 	UnitManager unit_manager;
-	BuildingManager building_manager;
 
 	// Observation object. This is how we find everything about the game
 	const sc2::ObservationInterface* observation;

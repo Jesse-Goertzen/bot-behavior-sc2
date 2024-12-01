@@ -5,7 +5,6 @@
 
 #include "StateMachineManager.h"
 #include "UnitManager.h"
-#include "BuildingManager.h"
 
 void BasicSc2Bot::OnGameStart() {
 
@@ -19,7 +18,7 @@ void BasicSc2Bot::OnGameStart() {
     query = Query();
 
     // Set the current state
-    state_machine.current_state = StateMachineManager::BUILD_FIRST_DRONE;
+    state_machine.current_state = StateMachineManager::START;
 
     // Get all expansion locations
     expansions_ = sc2::search::CalculateExpansionLocations(observation, query);
@@ -29,47 +28,74 @@ void BasicSc2Bot::OnGameStart() {
     startLocation_ = observation->GetStartLocation();
     staging_location_ = startLocation_;
 
+    unit_manager.OnGameStart(*this);
+
 }
 
 void BasicSc2Bot::OnStep() {
-    // On each step update the units in the unit manager
-    unit_manager.UpdateUnits(*this);
-
     // Switch case for all the steps we will do
     switch (state_machine.current_state) {
-
-        // Start by building a drone
-        case StateMachineManager::BUILD_FIRST_DRONE:
-            // Build first Drone
-            state_machine.BuildDrone(*this);
-            break;
-
-        case StateMachineManager::BUILD_FIRST_OVERLORD:
-            // Build first overlord
-            state_machine.BuildOverlord(*this);
-            break;
-
-        case StateMachineManager::BUILD_SECOND_DRONE:
-            // Build second drone
-            state_machine.BuildDrone(*this);
-            break;
         
-        case StateMachineManager::BUILD_THIRD_DRONE:
-            // Build third drone
-            state_machine.BuildDrone(*this);
+        case StateMachineManager::START:
+            // std::cout << "Starting State" << std::endl;
+            state_machine.StartingState(*this);
             break;
 
-        case StateMachineManager::FIRST_EXPAND:
-            // Attempt to expand
-            state_machine.FirstExpand(*this);
-            break;
-        
-        case StateMachineManager::WAIT_FOR_HATCHERY: 
-            // Wait for hatchery to finish and do other things
-            state_machine.WaitForHatchery(*this);
+        case StateMachineManager::PRE_FIRST_EXPANSION:
+            // std::cout << "Pre Expansion State" << std::endl;
+            state_machine.PreFirstExpansionState(*this);
             break;
 
-            case StateMachineManager::IDLE:
+        case StateMachineManager::FIRST_EXPANSION:
+            // std::cout << "Expansion State" << std::endl;
+            state_machine.FirstExpansionState(*this);
             break;
+
+        case StateMachineManager::POST_FIRST_EXPANSION:
+            // std::cout << "Post Expansion State" << std::endl;
+            state_machine.PostFirstExpansionState(*this);
+            break;
+
+        case StateMachineManager::QUEENING:
+            // std::cout << "Queen State" << std::endl;
+            state_machine.QueeningState(*this);
+            break;
+
+        case StateMachineManager::MORE_EXTRACTING:
+            // std::cout << "More Extracting State" << std::endl;
+            state_machine.MoreExtractingState(*this);
+            break;
+        case StateMachineManager::SATURATE_EXTRACTORS:
+            // std::cout << "Saturate Extractors State" << std::endl;
+            state_machine.SaturateExtractorsState(*this);
+            break;
+
+        case StateMachineManager::ROACH_WARREN:
+            state_machine.RoachWarrenState(*this);
+            break;
+
+        case StateMachineManager::BASE_DEFENSE:
+            state_machine.BaseDefenseState(*this);
+            break;
+
+        case StateMachineManager::SECOND_EXPANSION:
+            state_machine.SecondExpansionState(*this);
+            break;
+
+        case StateMachineManager::ROACHPOCALYPSE:
+            state_machine.RoachpocalypseState(*this);
+            break;
+    }
+}
+
+void BasicSc2Bot::OnBuildingConstructionComplete(const sc2::Unit* unit) {
+    if (unit->alliance != sc2::Unit::Alliance::Self) return;
+
+    if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY) {
+        unit_manager.bases.push_back({unit->tag, true});
+    }
+
+    if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR) {
+        unit_manager.extractors.push_back({unit->tag, true});
     }
 }

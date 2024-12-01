@@ -21,4 +21,15 @@ struct IsTownHall {
     }
 };
 
+struct IsVespeneGeyser {
+    bool operator()(const sc2::Unit& unit) {
+        switch (unit.unit_type.ToType()) {
+            case sc2::UNIT_TYPEID::NEUTRAL_VESPENEGEYSER: return true;
+            case sc2::UNIT_TYPEID::NEUTRAL_SPACEPLATFORMGEYSER: return true;
+            case sc2::UNIT_TYPEID::NEUTRAL_PROTOSSVESPENEGEYSER: return true;
+            default: return false;
+        }
+    }
+};
+
 #endif
