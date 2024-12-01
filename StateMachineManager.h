@@ -33,7 +33,8 @@ public:
         ROACH_WARREN,
         BASE_DEFENSE,
         SECOND_EXPANSION,
-        ROACHPOCALYPSE
+        ROACHPOCALYPSE,
+        ATTACK
 	};
 
     void StartingState(BasicSc2Bot& bot);
@@ -47,6 +48,7 @@ public:
     void BaseDefenseState(BasicSc2Bot& bot);
     void SecondExpansionState(BasicSc2Bot& bot);
     void RoachpocalypseState(BasicSc2Bot& bot);
+    void AttackState(BasicSc2Bot& bot);
 
     // What state the bot is currently in
     BotState current_state;

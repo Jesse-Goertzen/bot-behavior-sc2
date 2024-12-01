@@ -3,6 +3,8 @@
 
 #include "StateMachineManager.h"
 #include "UnitManager.h"
+#include "Attack.h"
+#include "Defend.h"
 
 class BasicSc2Bot : public sc2::Agent {
 public:
@@ -14,6 +16,10 @@ public:
 	// Each of our managers
 	StateMachineManager state_machine;
 	UnitManager unit_manager;
+
+	// Unit Controllers
+	Attack attack;
+	Defend defend;
 
 	// Observation object. This is how we find everything about the game
 	const sc2::ObservationInterface* observation;

@@ -8,12 +8,15 @@
 #include "sc2lib/sc2_lib.h"
 #include "sc2utils/sc2_manage_process.h"
 #include "sc2utils/sc2_arg_parser.h"
+// #include "BasicSc2Bot.h"
 
-class Defend : public sc2::Agent{
+class BasicSc2Bot;
+
+class Defend {
 public:
-    void DefendAgainstAttackers(const sc2::ObservationInterface* observation);
-    void GetEnemies(const sc2::ObservationInterface* observation);
-    void GatherDefenders(const sc2::ObservationInterface* observation);
+    void DefendAgainstAttackers(BasicSc2Bot& bot);
+    void GetEnemies(BasicSc2Bot& bot);
+    void GatherDefenders(BasicSc2Bot& bot);
 
 private:
     std::vector<const sc2::Unit*> enemies;

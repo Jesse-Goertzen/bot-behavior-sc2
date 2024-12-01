@@ -59,6 +59,7 @@ void BasicSc2Bot::OnStep() {
         case StateMachineManager::QUEENING:
             // std::cout << "Queen State" << std::endl;
             state_machine.QueeningState(*this);
+            // attack.ScoutWithOverlord(*this);
             break;
 
         case StateMachineManager::MORE_EXTRACTING:
@@ -84,6 +85,11 @@ void BasicSc2Bot::OnStep() {
 
         case StateMachineManager::ROACHPOCALYPSE:
             state_machine.RoachpocalypseState(*this);
+            break;
+
+        case StateMachineManager::ATTACK:
+            state_machine.AttackState(*this);
+            attack.RoachRush(*this);
             break;
     }
 }
