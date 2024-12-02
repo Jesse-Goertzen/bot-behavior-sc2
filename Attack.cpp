@@ -69,20 +69,12 @@ void Attack::GetPriorityTargets(BasicSc2Bot& bot) {
     // targets based on priority
     for (const auto& unit : enemy_units) {
         // high priority - workers
-        if (unit->unit_type == sc2::UNIT_TYPEID::TERRAN_SCV ||
-            unit->unit_type == sc2::UNIT_TYPEID::PROTOSS_PROBE ||
-            unit->unit_type == sc2::UNIT_TYPEID::ZERG_DRONE) {
-            targets.push_back(unit);
-        }
-        // medium priority - key structures
-        else if (unit->unit_type == sc2::UNIT_TYPEID::TERRAN_BARRACKS ||
-                 unit->unit_type == sc2::UNIT_TYPEID::PROTOSS_CYBERNETICSCORE ||
-                 unit->unit_type == sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL) {
-            targets.push_back(unit);
-        }
-        // low priority - other structures
-        else {
-            targets.push_back(unit);
+        if (unit->is_flying) continue;
+        auto attribs = bot.Observation()->GetUnitTypeData().at(unit->unit_type).attributes;
+        for (const auto& a : attribs) {
+            if (a == sc2::Attribute::Structure) {
+                targets.push_back(unit);
+            }
         }
     }
 }
@@ -136,6 +128,9 @@ void Attack::AttackTargets(BasicSc2Bot& bot) {
         return;
     }
 
+    printf("Attacking targets, list not empty\n");
+    std::cout << "attacking : " << UnitTypeToName(targets.front()->unit_type);
+
     for (const auto& roach : roaches) {
         // no orders
         if (roach->orders.empty()) {
@@ -158,42 +153,52 @@ bool Attack::ScoutWithOverlord(BasicSc2Bot& bot) {
         return false; 
     }
 
+    size_t i = 0;
+    for (const auto& location : bot.Observation()->GetGameInfo().enemy_start_locations ) {
+        bot.Actions()->UnitCommand(overlords[i++], sc2::ABILITY_ID::SMART, location);
+        if (i >= overlords.size()) {
+            break;
+        }
+    }
+
+    return true;
+
     // enemy starting location
-    const sc2::Point2D enemy_base = bot.Observation()->GetGameInfo().enemy_start_locations.front();
+    // const sc2::Point2D enemy_base = bot.Observation()->GetGameInfo().enemy_start_locations.front();
 
-    // move first overlord to the enemy base
-    const sc2::Unit* overlord = overlords.front();
-    if (overlord->orders.empty()) {
-        bot.Actions()->UnitCommand(overlord, sc2::ABILITY_ID::SMART, enemy_base);
-    }
+    // // move first overlord to the enemy base
+    // const sc2::Unit* overlord = overlords.front();
+    // if (overlord->orders.empty()) {
+    //     bot.Actions()->UnitCommand(overlord, sc2::ABILITY_ID::SMART, enemy_base);
+    // }
 
-    sc2::Units enemies = bot.Observation()->GetUnits(sc2::Unit::Alliance::Enemy, [enemy_base](const sc2::Unit& unit) {
-        return Distance2D(unit.pos, enemy_base) < 10.0f; // consider units near the base
-    });
+    // sc2::Units enemies = bot.Observation()->GetUnits(sc2::Unit::Alliance::Enemy, [enemy_base](const sc2::Unit& unit) {
+    //     return Distance2D(unit.pos, enemy_base) < 10.0f; // consider units near the base
+    // });
 
-    // count defense units
-    int defense_units = 0;
-    int defense_structures = 0;
+    // // count defense units
+    // int defense_units = 0;
+    // int defense_structures = 0;
 
-    for (const auto& unit : enemies) {
-        // count defense structures
-        if (unit->unit_type == sc2::UNIT_TYPEID::TERRAN_BUNKER ||
-            unit->unit_type == sc2::UNIT_TYPEID::PROTOSS_PHOTONCANNON ||
-            unit->unit_type == sc2::UNIT_TYPEID::ZERG_SPINECRAWLER) {
-            defense_structures++;
-        }
-        // count defense units
-        if (unit->unit_type == sc2::UNIT_TYPEID::TERRAN_MARINE ||
-            unit->unit_type == sc2::UNIT_TYPEID::TERRAN_MARAUDER ||
-            unit->unit_type == sc2::UNIT_TYPEID::ZERG_ZERGLING ||
-            unit->unit_type == sc2::UNIT_TYPEID::ZERG_ROACH ||
-            unit->unit_type == sc2::UNIT_TYPEID::PROTOSS_ZEALOT) {
-            defense_units++;
-        }
-    }
+    // for (const auto& unit : enemies) {
+    //     // count defense structures
+    //     if (unit->unit_type == sc2::UNIT_TYPEID::TERRAN_BUNKER ||
+    //         unit->unit_type == sc2::UNIT_TYPEID::PROTOSS_PHOTONCANNON ||
+    //         unit->unit_type == sc2::UNIT_TYPEID::ZERG_SPINECRAWLER) {
+    //         defense_structures++;
+    //     }
+    //     // count defense units
+    //     if (unit->unit_type == sc2::UNIT_TYPEID::TERRAN_MARINE ||
+    //         unit->unit_type == sc2::UNIT_TYPEID::TERRAN_MARAUDER ||
+    //         unit->unit_type == sc2::UNIT_TYPEID::ZERG_ZERGLING ||
+    //         unit->unit_type == sc2::UNIT_TYPEID::ZERG_ROACH ||
+    //         unit->unit_type == sc2::UNIT_TYPEID::PROTOSS_ZEALOT) {
+    //         defense_units++;
+    //     }
+    // }
 
-    std::cout << "defensive units found: " << defense_units << std::endl;
-    return (defense_units <= 10 && defense_structures <= 2); // threshold for defense units/structures ?? completely random right now
+    // std::cout << "defensive units found: " << defense_units << std::endl;
+    // return (defense_units <= 10 && defense_structures <= 2); // threshold for defense units/structures ?? completely random right now
 }
 
 // basic attack functions: https://github.com/Blizzard/s2client-api/blob/master/examples/common/bot_examples.cc

@@ -327,7 +327,7 @@ void StateMachineManager::SecondExpansionState(BasicSc2Bot& bot) {
 }
 
 void StateMachineManager::RoachpocalypseState(BasicSc2Bot &bot) {
-    const size_t ROACH_TARGET = 20;
+    const size_t ROACH_TARGET = 7;
     size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
     size_t roach_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ROACH);
     // roach_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_ROACH);
@@ -362,5 +362,13 @@ void StateMachineManager::RoachpocalypseState(BasicSc2Bot &bot) {
 }
 
 void StateMachineManager::AttackState(BasicSc2Bot& bot) {
-    ;
+    size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
+
+    bot.unit_manager.HandleDrones(bot);
+    bot.unit_manager.BuildOverlord(bot);
+    bot.unit_manager.TryInjectLarva(bot);
+
+    if (larva_count > 0) {
+        bot.unit_manager.BuildRoach(bot);
+    }
 }
