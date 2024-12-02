@@ -38,7 +38,6 @@ void StateMachineManager::StartingState(BasicSc2Bot& bot) {
     if (bot.unit_manager.BuildOverlord(bot)) {
         completeState();
         printf("Starting State Done\n");
-        bot.Actions()->SendChat("Starting State Done");
     }
 }
 
@@ -56,7 +55,6 @@ void StateMachineManager::PreFirstExpansionState(BasicSc2Bot& bot) {
     if (drone_count >= DRONE_TARGET && bot.Observation()->GetMinerals() >= MINERAL_TARGET) {
         completeState();
         printf("PreExpansion State Done\n");
-        bot.Actions()->SendChat("PreExpansion State Done");
     }
 }
 
@@ -65,7 +63,6 @@ void StateMachineManager::FirstExpansionState(BasicSc2Bot& bot) {
     if (bot.Observation()->GetMinerals() > 300) {
         if (bot.unit_manager.TryExpand(bot, sc2::ABILITY_ID::BUILD_HATCHERY, sc2::UNIT_TYPEID::ZERG_DRONE)){
             printf("Expansion State Done\n");
-            bot.Actions()->SendChat("Expansion State Done");
             completeState();
         }
     }
@@ -116,7 +113,6 @@ void StateMachineManager::PostFirstExpansionState(BasicSc2Bot& bot) {
     if (drone_count == DRONE_TARGET && extractor_count == EXTRACTOR_TARGET && spawn_pool_count == SPAWN_POOL_TARGET) {
         completeState();
         printf("Post First Expansion State Done\n");
-        bot.Actions()->SendChat("Post First Expansion State Done");
     }
 }
 
@@ -176,7 +172,6 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
     // printf("QState: Q:%zd L:%zd D:%zd Z:%zd, LV:%zd\n", queen_count, lair_count, drone_count, zergling_count, larva_count);
     if (queen_count == QUEEN_TARGET && lair_count == LAIR_TARGET) {
         std::cout << "Queen state done" << std::endl;
-        bot.Actions()->SendChat("Queen state done");
         completeState();
     }
 
@@ -217,7 +212,6 @@ void StateMachineManager::MoreExtractingState(BasicSc2Bot& bot) {
     if (extractor_count == EXTRACTOR_TARGET) {
         completeState();
         printf("More Extractor State Done\n");
-        bot.Actions()->SendChat("More Extractor State Done");
     }
 
 }

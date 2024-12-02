@@ -429,7 +429,6 @@ bool UnitManager::TryExpand(BasicSc2Bot& bot, sc2::AbilityID build_ability, sc2:
     if (TryBuildStructure(bot, build_ability, worker_type, closest_expansion, true) && bot.observation->GetUnits(sc2::Unit::Self, IsTownHall()).size() < 4) {
         bot.GetStagingLocation() = sc2::Point3D(((bot.GetStagingLocation().x + closest_expansion.x) / 2), ((bot.GetStagingLocation().y + closest_expansion.y) / 2),
             ((bot.GetStagingLocation().z + closest_expansion.z) / 2));
-        bot.Actions()->SendChat("Try Build reached");
         return true;
     }
     return false;
@@ -478,7 +477,6 @@ bool UnitManager::TryBuildStructure(
     }
     // Check to see if unit can build there
     if (bot.Query()->Placement(ability_type_for_structure, location)) { 
-        bot.Actions()->SendChat(std::to_string(static_cast<int>(unit->orders.front().ability_id)));
         bot.Actions()->UnitCommand(unit, ability_type_for_structure, location);
         return true;
     }
