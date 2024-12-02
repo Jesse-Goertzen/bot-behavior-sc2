@@ -80,7 +80,7 @@ void Attack::GetPriorityTargets(const sc2::ObservationInterface* observation) {
         }
         // low priority - other structures
         else {
-            targets.push_back(unit);
+            if (!unit->is_flying) { targets.push_back(unit); } // don't target any flying units
         }
     }
 }
@@ -95,7 +95,7 @@ void Attack::GetWeakTargets(const sc2::ObservationInterface* observation) {
     });
 
     for (const auto& unit : enemy_units){
-        targets.push_back(unit);
+        if (!unit->is_flying) { targets.push_back(unit); } // don't target any flying units
     }
 }
 
@@ -110,7 +110,7 @@ void Attack::GetCloseTargets(const sc2::Unit* unit, const sc2::ObservationInterf
     });
 
     for (const auto& unit : enemy_units){
-        targets.push_back(unit);
+        if (!unit->is_flying) { targets.push_back(unit); } // don't target any flying units
     }
 }
 
