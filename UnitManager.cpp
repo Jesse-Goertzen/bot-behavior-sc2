@@ -424,10 +424,12 @@ bool UnitManager::TryExpand(BasicSc2Bot& bot, sc2::AbilityID build_ability, sc2:
             }
         }
     }
+    std::cout << "closest_expansion: " << closest_expansion.x << " " << closest_expansion.y << std::endl;
     //only update staging location up till 3 bases.
     if (TryBuildStructure(bot, build_ability, worker_type, closest_expansion, true) && bot.observation->GetUnits(sc2::Unit::Self, IsTownHall()).size() < 4) {
         bot.GetStagingLocation() = sc2::Point3D(((bot.GetStagingLocation().x + closest_expansion.x) / 2), ((bot.GetStagingLocation().y + closest_expansion.y) / 2),
             ((bot.GetStagingLocation().z + closest_expansion.z) / 2));
+        bot.Actions()->SendChat("Try Build reached");
         return true;
     }
     return false;
@@ -444,9 +446,9 @@ bool UnitManager::TryBuildStructure(
         bool isExpansion = false
     ) 
 {
-    sc2::Units workers = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
+    sc2::Units workers = bot.observation->GetUnits(sc2::Unit::Alliance::Self, sc2::IsUnit(unit_type));
 
-    // If we have no workers Don't build
+    //if we have no workers Don't build
     if (workers.empty()) {
         return false;
     }
@@ -457,28 +459,16 @@ bool UnitManager::TryBuildStructure(
             if (order.ability_id == ability_type_for_structure) {
                 return false;
             }
-        }   
-    }
-
-    // Find an idle worker
-    const sc2::Unit* unit = nullptr;
-    for (const auto& worker : workers) {
-        if (worker->orders.empty()) {
-            unit = worker;
-            break;
         }
     }
 
-    // If no idle workers were found, select any worker
-    if (!unit) {
-        unit = GetRandomEntry(workers);
-    }
+    // If no worker is already building one, get a random worker to build one
+    const sc2::Unit* unit = GetRandomEntry(workers);
 
     // Check to see if unit can make it there
     if (bot.Query()->PathingDistance(unit, location) < 0.1f) {
         return false;
     }
-
     if (!isExpansion) {
         for (const auto& expansion : bot.GetExpansions()) {
             if (Distance2D(location, sc2::Point2D(expansion.x, expansion.y)) < 7) {
@@ -486,9 +476,9 @@ bool UnitManager::TryBuildStructure(
             }
         }
     }
-
     // Check to see if unit can build there
-    if (bot.Query()->Placement(ability_type_for_structure, location)) {
+    if (bot.Query()->Placement(ability_type_for_structure, location)) { 
+        bot.Actions()->SendChat(std::to_string(static_cast<int>(unit->orders.front().ability_id)));
         bot.Actions()->UnitCommand(unit, ability_type_for_structure, location);
         return true;
     }

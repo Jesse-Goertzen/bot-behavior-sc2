@@ -128,8 +128,8 @@ void Attack::AttackTargets(BasicSc2Bot& bot) {
         return;
     }
 
-    printf("Attacking targets, list not empty\n");
-    std::cout << "attacking : " << UnitTypeToName(targets.front()->unit_type);
+    // printf("Attacking targets, list not empty\n");
+    // std::cout << "attacking : " << UnitTypeToName(targets.front()->unit_type);
 
     for (const auto& roach : roaches) {
         // no orders
