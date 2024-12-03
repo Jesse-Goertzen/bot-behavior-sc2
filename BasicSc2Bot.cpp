@@ -1,6 +1,7 @@
 #include "BasicSc2Bot.h"
 
 #include "header_files.h"
+// #include "sc2_api/sc2_score.h"
 #include "utility.h"
 
 #include "StateMachineManager.h"
@@ -107,4 +108,13 @@ void BasicSc2Bot::OnBuildingConstructionComplete(const sc2::Unit* unit) {
     if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR) {
         unit_manager.extractors.push_back({unit->tag, true});
     }
+}
+
+void BasicSc2Bot::OnGameEnd() {
+    const sc2::GameInfo gameinfo = Observation()->GetGameInfo();
+    const sc2::Score score = Observation()->GetScore();
+    const std::vector<sc2::PlayerResult> results = Observation()->GetResults();
+    const sc2::ScoreDetails details = score.score_details;
+
+    printf("{outcome: %d; time: %d}\n", results[0].result, Observation()->GetGameLoop());
 }
