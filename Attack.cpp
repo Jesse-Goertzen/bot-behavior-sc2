@@ -112,6 +112,7 @@ void Attack::GetCloseTargets(const sc2::Unit* unit, BasicSc2Bot& bot) {
 
 // keep track of our roaches in a vector
 void Attack::GatherRoaches(BasicSc2Bot& bot) {
+    if (targets.empty()) return;
     roaches.clear();
 
     sc2::Units all_units = bot.Observation()->GetUnits(sc2::Unit::Alliance::Self);
@@ -124,12 +125,19 @@ void Attack::GatherRoaches(BasicSc2Bot& bot) {
 
 void Attack::AttackTargets(BasicSc2Bot& bot) {
     
-    if (targets.empty()){
+    if (targets.empty()) {
+        printf("testing\n");
+        float min_dist = std::numeric_limits<float>::max();
+        sc2::Point3D target;
+
+        for (const auto& expansion : bot.GetExpansions()) {
+            if (roaches.empty()) break;
+            bot.Actions()->UnitCommand(roaches.back(), sc2::ABILITY_ID::ATTACK, expansion);
+            roaches.pop_back();
+        }
+
         return;
     }
-
-    printf("Attacking targets, list not empty\n");
-    std::cout << "attacking : " << UnitTypeToName(targets.front()->unit_type);
 
     for (const auto& roach : roaches) {
         // no orders
@@ -154,10 +162,12 @@ bool Attack::ScoutWithOverlord(BasicSc2Bot& bot) {
     }
 
     size_t i = 0;
-    for (const auto& location : bot.Observation()->GetGameInfo().enemy_start_locations ) {
-        bot.Actions()->UnitCommand(overlords[i++], sc2::ABILITY_ID::SMART, location);
-        if (i >= overlords.size()) {
-            break;
+    for (const auto& location : bot.Observation()->GetGameInfo().enemy_start_locations) {
+        if (location != sc2::Point2D(0, 0)) {
+            bot.Actions()->UnitCommand(overlords[i++], sc2::ABILITY_ID::SMART, location);
+            if (i >= overlords.size()) {
+                break;
+            }
         }
     }
 

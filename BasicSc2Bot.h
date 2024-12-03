@@ -19,6 +19,7 @@ public:
 
 	// Unit Controllers
 	Attack attack;
+	bool scouted = false;
 	Defend defend;
 
 	// Observation object. This is how we find everything about the game

@@ -28,6 +28,7 @@ public:
 private:
     std::vector<const sc2::Unit*> targets;
     std::vector<const sc2::Unit*> roaches;
+    std::vector<sc2::Point3D> visited_expansions;
 };
 
 #endif // ATTACK_H

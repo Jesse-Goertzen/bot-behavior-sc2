@@ -59,7 +59,10 @@ void BasicSc2Bot::OnStep() {
         case StateMachineManager::QUEENING:
             // std::cout << "Queen State" << std::endl;
             state_machine.QueeningState(*this);
-            attack.ScoutWithOverlord(*this);
+            if (!scouted) {
+                attack.ScoutWithOverlord(*this);
+                scouted = true;
+            }
             break;
 
         case StateMachineManager::MORE_EXTRACTING:
