@@ -1,6 +1,7 @@
 #include "BasicSc2Bot.h"
 
 #include "header_files.h"
+// #include "sc2_api/sc2_score.h"
 #include "utility.h"
 
 #include "StateMachineManager.h"
@@ -8,24 +9,15 @@
 
 void BasicSc2Bot::OnGameStart() {
 
-    // Get the observation object and store it in a pointer
-    observation = Observation();
-
-    // Get the action interface and store it as a pointer
-    actions = Actions();
-
-    // Query interface store as pointer
-    query = Query();
-
     // Set the current state
     state_machine.current_state = StateMachineManager::START;
 
     // Get all expansion locations
-    expansions_ = sc2::search::CalculateExpansionLocations(observation, query);
+    expansions_ = sc2::search::CalculateExpansionLocations(Observation(), Query());
 
     // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
     // Set the start location
-    startLocation_ = observation->GetStartLocation();
+    startLocation_ = Observation()->GetStartLocation();
     staging_location_ = startLocation_;
 
     unit_manager.OnGameStart(*this);
@@ -59,6 +51,10 @@ void BasicSc2Bot::OnStep() {
         case StateMachineManager::QUEENING:
             // std::cout << "Queen State" << std::endl;
             state_machine.QueeningState(*this);
+            if (!scouted) {
+                attack.ScoutWithOverlord(*this);
+                scouted = true;
+            }
             break;
 
         case StateMachineManager::MORE_EXTRACTING:
@@ -85,6 +81,11 @@ void BasicSc2Bot::OnStep() {
         case StateMachineManager::ROACHPOCALYPSE:
             state_machine.RoachpocalypseState(*this);
             break;
+
+        case StateMachineManager::ATTACK:
+            state_machine.AttackState(*this);
+            attack.RoachRush(*this);
+            break;
     }
 }
 
@@ -98,4 +99,13 @@ void BasicSc2Bot::OnBuildingConstructionComplete(const sc2::Unit* unit) {
     if (unit->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR) {
         unit_manager.extractors.push_back({unit->tag, true});
     }
+}
+
+void BasicSc2Bot::OnGameEnd() {
+    const sc2::GameInfo gameinfo = Observation()->GetGameInfo();
+    const sc2::Score score = Observation()->GetScore();
+    const std::vector<sc2::PlayerResult> results = Observation()->GetResults();
+    const sc2::ScoreDetails details = score.score_details;
+
+    printf("{outcome: %d; time: %d}\n", results[0].result, Observation()->GetGameLoop());
 }

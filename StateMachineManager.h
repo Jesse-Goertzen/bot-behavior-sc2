@@ -9,18 +9,6 @@ public:
     // Moves us to the next state
     void completeState();
 
-    // States that just build a drone
-    void BuildDrone(BasicSc2Bot& bot);
-
-    // Build Overlord
-    void BuildOverlord(BasicSc2Bot& bot);
-
-    // First expansion attempt
-    void FirstExpand(BasicSc2Bot& bot);
-
-    // What we do while we wait for the first hatchery
-    void WaitForHatchery(BasicSc2Bot& bot);
-
     // States of the bot, in order of completion
 	enum BotState {
         START,
@@ -33,7 +21,8 @@ public:
         ROACH_WARREN,
         BASE_DEFENSE,
         SECOND_EXPANSION,
-        ROACHPOCALYPSE
+        ROACHPOCALYPSE,
+        ATTACK
 	};
 
     void StartingState(BasicSc2Bot& bot);
@@ -47,6 +36,7 @@ public:
     void BaseDefenseState(BasicSc2Bot& bot);
     void SecondExpansionState(BasicSc2Bot& bot);
     void RoachpocalypseState(BasicSc2Bot& bot);
+    void AttackState(BasicSc2Bot& bot);
 
     // What state the bot is currently in
     BotState current_state;

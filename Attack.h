@@ -8,23 +8,27 @@
 #include "sc2lib/sc2_lib.h"
 #include "sc2utils/sc2_manage_process.h"
 #include "sc2utils/sc2_arg_parser.h"
+// #include "BasicSc2Bot.h"
 
-class Attack : public sc2::Agent{
+class BasicSc2Bot;
+
+class Attack {
 public:
-    void RoachRush(const sc2::ObservationInterface* observation);
-    void GetPriorityTargets(const sc2::ObservationInterface* observation);
-    void GetWeakTargets(const sc2::ObservationInterface* observation);
-    void GetCloseTargets(const sc2::Unit* unit, const sc2::ObservationInterface* observation);
-    void GatherRoaches(const sc2::ObservationInterface* observation);
-    void AttackTargets(const sc2::ObservationInterface* observation);
-    bool ScoutWithOverlord(const sc2::ObservationInterface* observation);
+    void RoachRush(BasicSc2Bot& bot);
+    void GetPriorityTargets(BasicSc2Bot& bot);
+    void GetWeakTargets(BasicSc2Bot& bot);
+    void GetCloseTargets(const sc2::Unit* unit, BasicSc2Bot& bot);
+    void GatherRoaches(BasicSc2Bot& bot);
+    void AttackTargets(BasicSc2Bot& bot);
+    bool ScoutWithOverlord(BasicSc2Bot& bot);
 
-    void AttackWithUnitType(sc2::UnitTypeID unit_type, const sc2::ObservationInterface* observation);
-    void AttackWithUnit(sc2::UnitTypeID unit_type, const sc2::ObservationInterface* observation);
+    void AttackWithUnitType(sc2::UnitTypeID unit_type, BasicSc2Bot& bot);
+    void AttackWithUnit(sc2::UnitTypeID unit_type, BasicSc2Bot& bot);
 
 private:
     std::vector<const sc2::Unit*> targets;
     std::vector<const sc2::Unit*> roaches;
+    std::vector<sc2::Point3D> visited_expansions;
 };
 
 #endif // ATTACK_H

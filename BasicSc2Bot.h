@@ -3,6 +3,8 @@
 
 #include "StateMachineManager.h"
 #include "UnitManager.h"
+#include "Attack.h"
+#include "Defend.h"
 
 class BasicSc2Bot : public sc2::Agent {
 public:
@@ -10,17 +12,16 @@ public:
 	virtual void OnGameStart();
 	virtual void OnStep();
 	virtual void OnBuildingConstructionComplete(const sc2::Unit* unit);
+	virtual void OnGameEnd();
 
 	// Each of our managers
 	StateMachineManager state_machine;
 	UnitManager unit_manager;
 
-	// Observation object. This is how we find everything about the game
-	const sc2::ObservationInterface* observation;
-	// Action object. This is how we tell units to do stuff
-	sc2::ActionInterface* actions;
-	// Query interface
-	sc2::QueryInterface * query;
+	// Unit Controllers
+	Attack attack;
+	bool scouted = false;
+	Defend defend;
 
 	// Inline getters for private values
 	std::vector<sc2::Point3D> GetExpansions() const { return expansions_; }

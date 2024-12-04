@@ -146,7 +146,6 @@ void StateMachineManager::QueeningState(BasicSc2Bot& bot) {
         bot.unit_manager.BuildDrone(bot);
     }
 
-
     // Attempt to inject larva for each queen
     // Plan is to run inject every 29 seconds, but if we just continiously try to inject, it will fail because its already injecting
     // Therfore we dont need to account for 29 seconds and just always call in this function
@@ -267,7 +266,7 @@ void StateMachineManager::RoachWarrenState(BasicSc2Bot& bot) {
 
 void StateMachineManager::BaseDefenseState(BasicSc2Bot& bot) {
     const size_t DRONE_TARGET = 41;
-    const size_t SPORE_CRAWLER_TARGET = 2;
+    const size_t SPINE_CRAWLER_TARGET = 2;
     size_t drone_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_DRONE);
     drone_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_DRONE);
     
@@ -275,11 +274,11 @@ void StateMachineManager::BaseDefenseState(BasicSc2Bot& bot) {
     bot.unit_manager.TryInjectLarva(bot);
     bot.unit_manager.HandleDrones(bot);
 
-    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPORECRAWLER) < SPORE_CRAWLER_TARGET) {
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPINECRAWLER) < SPINE_CRAWLER_TARGET) {
         // could be an issue if building the spore crawlers fails for some reason, would have to check where to build
         // if we want one at each hatchery
         for (const auto& base : bot.Observation()->GetUnits(sc2::Unit::Alliance::Self, IsTownHall())) {
-            bot.unit_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPORECRAWLER, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
+            bot.unit_manager.TryBuildOnCreep(bot, sc2::ABILITY_ID::BUILD_SPINECRAWLER, sc2::UNIT_TYPEID::ZERG_DRONE, base->pos);
         }
     }
 
@@ -287,7 +286,7 @@ void StateMachineManager::BaseDefenseState(BasicSc2Bot& bot) {
         bot.unit_manager.BuildDrone(bot);
     }
 
-    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPORECRAWLER) >= SPORE_CRAWLER_TARGET) {
+    if (bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_SPINECRAWLER) >= SPINE_CRAWLER_TARGET) {
         printf("Base Defense State Done\n");
         completeState();
     }
@@ -327,7 +326,10 @@ void StateMachineManager::SecondExpansionState(BasicSc2Bot& bot) {
 }
 
 void StateMachineManager::RoachpocalypseState(BasicSc2Bot &bot) {
+    const size_t ROACH_TARGET = 7;
     size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
+    size_t roach_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_ROACH);
+    // roach_count += bot.unit_manager.CountUnitEggs(bot, sc2::ABILITY_ID::TRAIN_ROACH);
 
     // Get the roach warren
     const sc2::Unit* roach_warren = nullptr;
@@ -343,6 +345,23 @@ void StateMachineManager::RoachpocalypseState(BasicSc2Bot &bot) {
     if (bot.Observation()->GetUpgrades().empty() && roach_warren) {
         bot.Actions()->UnitCommand(roach_warren, sc2::ABILITY_ID::RESEARCH_GLIALREGENERATION);
     }
+
+    bot.unit_manager.HandleDrones(bot);
+    bot.unit_manager.BuildOverlord(bot);
+    bot.unit_manager.TryInjectLarva(bot);
+
+    if (larva_count > 0) {
+        bot.unit_manager.BuildRoach(bot);
+    }
+
+    if (roach_count >= ROACH_TARGET) {
+        printf("Roachs done\n");
+        completeState();
+    }
+}
+
+void StateMachineManager::AttackState(BasicSc2Bot& bot) {
+    size_t larva_count = bot.unit_manager.CountUnitType(bot, sc2::UNIT_TYPEID::ZERG_LARVA);
 
     bot.unit_manager.HandleDrones(bot);
     bot.unit_manager.BuildOverlord(bot);
