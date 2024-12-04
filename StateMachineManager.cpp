@@ -15,7 +15,7 @@ void StateMachineManager::PrestartState(BasicSc2Bot& bot) {
 
     // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
     // Set the start location
-    bot.startLocation = bot.observation->GetStartLocation();
+    bot.startLocation = bot.Observation()->GetStartLocation();
     bot.staging_location = bot.startLocation;
 
     completeState();
