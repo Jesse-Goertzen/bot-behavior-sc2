@@ -11,7 +11,7 @@
 
 ```
 :: Clone the project
-$ git clone --recursive git clone --recursive https://github.com/Jesse-Goertzen/bot-behavior-sc2
+$ git clone --recursive https://github.com/Jesse-Goertzen/bot-behavior-sc2
 $ cd BasicSc2Bot
 
 :: Create build directory.
