@@ -22,8 +22,8 @@ public:
     void AttackTargets(BasicSc2Bot& bot);
     bool ScoutWithOverlord(BasicSc2Bot& bot);
 
-    void AttackWithUnitType(sc2::UnitTypeID unit_type, BasicSc2Bot& bot);
-    void AttackWithUnit(sc2::UnitTypeID unit_type, BasicSc2Bot& bot);
+    // void AttackWithUnitType(sc2::UnitTypeID unit_type, BasicSc2Bot& bot);
+    // void AttackWithUnit(sc2::UnitTypeID unit_type, BasicSc2Bot& bot);
 
 private:
     std::vector<const sc2::Unit*> targets;
@@ -32,4 +32,3 @@ private:
 };
 
 #endif // ATTACK_H
-
