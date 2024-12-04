@@ -23,13 +23,6 @@ public:
 	bool scouted = false;
 	Defend defend;
 
-	// Observation object. This is how we find everything about the game
-	const sc2::ObservationInterface* observation;
-	// Action object. This is how we tell units to do stuff
-	sc2::ActionInterface* actions;
-	// Query interface
-	sc2::QueryInterface * query;
-
 	// Inline getters for private values
 	std::vector<sc2::Point3D> GetExpansions() const { return expansions_; }
 	sc2::Point3D GetStartLocation() const { return startLocation_; }
