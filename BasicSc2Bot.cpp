@@ -9,24 +9,15 @@
 
 void BasicSc2Bot::OnGameStart() {
 
-    // Get the observation object and store it in a pointer
-    observation = Observation();
-
-    // Get the action interface and store it as a pointer
-    actions = Actions();
-
-    // Query interface store as pointer
-    query = Query();
-
     // Set the current state
     state_machine.current_state = StateMachineManager::START;
 
     // Get all expansion locations
-    expansions_ = sc2::search::CalculateExpansionLocations(observation, query);
+    expansions_ = sc2::search::CalculateExpansionLocations(Observation(), Query());
 
     // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
     // Set the start location
-    startLocation_ = observation->GetStartLocation();
+    startLocation_ = Observation()->GetStartLocation();
     staging_location_ = startLocation_;
 
     unit_manager.OnGameStart(*this);

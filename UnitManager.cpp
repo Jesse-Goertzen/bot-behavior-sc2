@@ -35,7 +35,7 @@ size_t UnitManager::CountUnitEggs(BasicSc2Bot& bot, sc2::ABILITY_ID ability) {
 // Make drone
 bool UnitManager::BuildDrone(BasicSc2Bot& bot) {
 
-    if (bot.observation->GetMinerals() < 50) {
+    if (bot.Observation()->GetMinerals() < 50) {
         // std::cout << "Not enough minerals to train drone! (" << Observation()->GetMinerals() << "/50)" << std::endl;
         return false;
     }
@@ -400,7 +400,7 @@ bool UnitManager::TryBuildOnCreep(BasicSc2Bot& bot,
     float ry = sc2::GetRandomScalar();
     sc2::Point2D build_location = sc2::Point2D(loc.x + rx * 15, loc.y + ry * 15);
 
-    if (bot.observation->HasCreep(build_location)) {
+    if (bot.Observation()->HasCreep(build_location)) {
         return TryBuildStructure(bot, ability_type_for_structure, unit_type, build_location, false);
     }
     return false;
@@ -425,7 +425,7 @@ bool UnitManager::TryExpand(BasicSc2Bot& bot, sc2::AbilityID build_ability, sc2:
         }
     }
     //only update staging location up till 3 bases.
-    if (TryBuildStructure(bot, build_ability, worker_type, closest_expansion, true) && bot.observation->GetUnits(sc2::Unit::Self, IsTownHall()).size() < 4) {
+    if (TryBuildStructure(bot, build_ability, worker_type, closest_expansion, true) && bot.Observation()->GetUnits(sc2::Unit::Self, IsTownHall()).size() < 4) {
         bot.GetStagingLocation() = sc2::Point3D(((bot.GetStagingLocation().x + closest_expansion.x) / 2), ((bot.GetStagingLocation().y + closest_expansion.y) / 2),
             ((bot.GetStagingLocation().z + closest_expansion.z) / 2));
         return true;
