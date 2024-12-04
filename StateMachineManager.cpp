@@ -9,6 +9,18 @@ void StateMachineManager::completeState() {
     current_state = static_cast<BotState>(current_state + 1);
 };
 
+void StateMachineManager::PrestartState(BasicSc2Bot& bot) {
+    // Get all expansion locations
+    bot.expansions = sc2::search::CalculateExpansionLocations(bot.Observation(), bot.Query());
+
+    // https://github.com/Blizzard/s2client-api/blob/614acc00abb5355e4c94a1b0279b46e9d845b7ce/examples/common/bot_examples.cc#L153C1-L155C40
+    // Set the start location
+    bot.startLocation = bot.observation->GetStartLocation();
+    bot.staging_location = bot.startLocation;
+
+    completeState();
+}
+
 // steps 1 & 2
 void StateMachineManager::StartingState(BasicSc2Bot& bot) {
     const size_t DRONE_TARGET = 13;

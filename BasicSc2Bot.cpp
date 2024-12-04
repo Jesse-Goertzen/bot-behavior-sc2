@@ -34,9 +34,20 @@ void BasicSc2Bot::OnGameStart() {
 }
 
 void BasicSc2Bot::OnStep() {
+
+
+    static int step_counter = 0;
+    ++step_counter;
+    if (step_counter < 10) {
+        return;
+    }
+
     // Switch case for all the steps we will do
     switch (state_machine.current_state) {
-        
+        case StateMachineManager::PRESTART:
+            state_machine.PrestartState(*this);
+            break;
+            
         case StateMachineManager::START:
             // std::cout << "Starting State" << std::endl;
             state_machine.StartingState(*this);

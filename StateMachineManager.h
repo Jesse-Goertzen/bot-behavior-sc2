@@ -23,6 +23,7 @@ public:
 
     // States of the bot, in order of completion
 	enum BotState {
+        PRESTART,
         START,
         PRE_FIRST_EXPANSION,
         FIRST_EXPANSION,
@@ -37,6 +38,7 @@ public:
         ATTACK
 	};
 
+    void PrestartState(BasicSc2Bot& bot);
     void StartingState(BasicSc2Bot& bot);
     void PreFirstExpansionState(BasicSc2Bot& bot);
     void FirstExpansionState(BasicSc2Bot& bot);
